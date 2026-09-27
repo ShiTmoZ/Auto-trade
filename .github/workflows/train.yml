@@ -1,0 +1,50 @@
+name: Automated Multi-Year Training & Backtest
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_year:
+        description: 'Start Year for Historical Data'
+        required: true
+        default: '2020'
+      end_year:
+        description: 'End Year for Historical Data'
+        required: true
+        default: '2026'
+
+jobs:
+  train_and_backtest:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install PyTorch & Computing Stack
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch numpy pandas
+
+      - name: Run Multi-Year Mathematical Backtest (Binance Vision Ingestion)
+        run: |
+          python multi_year_backtest.py ${{ github.event.inputs.start_year || '2020' }} ${{ github.event.inputs.end_year || '2026' }}
+
+      - name: Train Deep Residual MLP Gatekeeper
+        run: |
+          python pipeline_train.py
+
+      - name: Commit and Push Training Artifacts & Report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add BACKTEST_REPORT.md trades_backtest.json best_model.pt || true
+          git commit -m "chore(ml): update backtest report and best_model.pt [skip ci]" || echo "No changes to commit"
+          git push origin main
