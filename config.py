@@ -46,7 +46,7 @@ CONFIG: Dict[str, Any] = {
     "ai_reviewer": {
         "enabled": True,
         "endpoint": "http://127.0.0.1:20128/v1/chat/completions",
-        "model": "ag/gemini-3.8-flash-high",
+        "model": "ag/gemini-3.8-flash-low",  # Strictly low reasoning to prevent hyper-rationalization
         "timeout_seconds": 30,
         "review_frequency_trades": 5,  # Trigger AI review after every 5 closed trades
     },
