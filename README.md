@@ -46,28 +46,26 @@ The **Tokyo Breakout Quantitative Engine** is an institutional-grade algorithmic
 
 ---
 
-## 3. Deep Residual MLP (Res-MLP) Architecture
+## 3. Deep Residual MLP (Res-MLP) Architecture & Self-Improvement
 
-Candidate setups are gated by a PyTorch Deep Residual Multi-Layer Perceptron trained on normalized tabular features:
+<p align="center">
+  <img src="assets/neural_net_arch.svg" alt="Deep Residual MLP Architecture" width="100%">
+</p>
 
-```
-[15 Quantitative Features] 
-       │
-       ▼
- [Dense (15 → 64)] ──► [LayerNorm] ──► [LeakyReLU(0.1)] ──► [Dropout(0.3)] ──┐ (Skip Connection)
-       │                                                                      │
-       ▼                                                                      │
- [Dense (64 → 32)] ──► [LayerNorm] ──► [LeakyReLU(0.1)] ──► [Dropout(0.2)]    │
-       │                                                                      │
-       ▼                                                                      │
- [Residual Add & Projection (32 + 64 → 16)] ◄────────────────────────────────┘
-       │
-       ▼
- [Dense (16 → 1)] ──► [Sigmoid] ──► Win Probability P(Win) >= 0.65
-```
+### A. Dataset & Training Scope
+* **Training Corpus:** **1,401,860 real 15-minute candles** across 2021 through 2026.
+* **Multi-Asset Universe:** Top 10 high-liquidity cryptocurrency pairs (`BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `BNBUSDT`, `XRPUSDT`, `DOGEUSDT`, `ADAUSDT`, `AVAXUSDT`, `LINKUSDT`, `LTCUSDT`).
+* **Feature Vector:** 15 normalized quantitative metrics (Volume ratios, FVG depth, HTF directional alignment, ATR-relative distance to Asian liquidity, body velocity, RSI momentum, and QM sweep indicators).
 
-* **Loss Function:** **Binary Focal Loss** ($\alpha = 0.55, \gamma = 2.0$) prioritizing hard boundary classifications over trivial samples.
-* **Regularization:** AdamW with low learning rate ($\eta = 0.001$) and weight decay ($0.01$) to suppress noise fitting.
+### B. Mathematical Specifications
+* **Residual Skip Connection:** A linear projection connects the 1st dense representation directly to the 3rd layer, ensuring critical price and volume gradients remain uncorrupted across deep transformations.
+* **Binary Focal Loss:** Penalizes difficult boundary cases and suppresses trivial market noise:
+  $$\mathcal{L}_{\text{Focal}} = -\alpha (1 - p_t)^\gamma \log(p_t), \quad (\alpha=0.55, \gamma=2.0)$$
+* **Regularization:** AdamW with low learning rate ($\eta = 0.001$) and weight decay ($0.01$) to prevent memorization of historical stochasticity.
+
+### C. Continuous Self-Improvement Loop
+1. **Online Micro-Adaptation (`ml_gatekeeper.update_online`):** As live paper or real trades conclude, verified outcomes execute a micro-step gradient adjustment $(\eta_{\text{online}} = 0.0005)$ to adjust confidence scores to prevailing volatility regimes without catastrophic forgetting.
+2. **Scheduled Automated Retraining:** Continuous integration pipelines regularly ingest the latest market months via GitHub Actions to refresh baseline model weights.
 
 ---
 
@@ -110,3 +108,9 @@ python3 main.py
 # Run multi-asset backtest and data pipeline
 python3 multi_asset_pipeline.py
 ```
+
+---
+
+## 6. Risk Disclaimer
+
+> ⚠️ **IMPORTANT NOTICE:** All financial and cryptocurrency trading involves substantial risk of capital loss. This quantitative framework, backtest statistics, and machine learning models are provided strictly for educational, scientific, and research purposes. Historical performance and simulated backtest results are no guarantee of future returns. The entire financial risk of deployment, execution, and capital allocation rests solely and exclusively with the user.
