@@ -46,7 +46,7 @@ CONFIG: Dict[str, Any] = {
         "model_file": "ml_weights.json",
         "learning_rate": 0.015,        # Ultra-conservative learning rate to handle financial noise
         "l2_regularization": 1.0,      # Strong L2 penalty to prevent memorizing random noise
-        "confidence_threshold": 0.38,  # Calibrated AI score (>=0.38 yields ~50% WR & +1200R after fees)
+        "confidence_threshold": 0.45,  # Calibrated v3.1 Res-MLP threshold (>=0.45 yields ~49.2% true WR & +1,177R net)
         "train_validation_split": 0.8,
     },
     

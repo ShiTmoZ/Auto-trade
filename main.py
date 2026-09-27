@@ -20,8 +20,8 @@ from execution_risk import ExecutionRiskManager
 from gemini_reviewer import GeminiReviewer
 from telegram_notifier import TelegramNotifier
 
-# Architectural Flag: DeepSeek Audit Bypass (Rely on pure institutional ICT/RTM validation until v3.0 model)
-ENABLE_ML_GATEKEEPER = False
+# Architectural Flag: Res-MLP Gatekeeper enabled for v3.1
+ENABLE_ML_GATEKEEPER = True
 
 def run_bot(paper_mode: bool = True):
     symbols = CONFIG["symbols"] if CONFIG.get("multi_asset_mode") else [CONFIG["symbol"]]
