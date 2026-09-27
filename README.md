@@ -5,11 +5,28 @@
 <p align="center">
   <a href="https://github.com/ShiTmoZ/Auto-trade/actions"><img src="https://img.shields.io/badge/GitHub_Actions-Multi--Asset_Pipeline-22c55e?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI"></a>
   <a href="https://pytorch.org"><img src="https://img.shields.io/badge/PyTorch-Residual_MLP-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch"></a>
-  <img src="https://img.shields.io/badge/Win_Rate-74.4%25-00F0FF?style=for-the-badge" alt="Win Rate">
-  <img src="https://img.shields.io/badge/Profit_Factor-7.26-FBBF24?style=for-the-badge" alt="Profit Factor">
-  <img src="https://img.shields.io/badge/Trades_Evaluated-8,071-8B5CF6?style=for-the-badge" alt="Trades">
-  <img src="https://img.shields.io/badge/Candles_Tested-1.40M-10B981?style=for-the-badge" alt="Candles">
+  <img src="https://img.shields.io/badge/AI_Win_Rate-49.5%25-00FFA3?style=for-the-badge" alt="AI Win Rate">
+  <img src="https://img.shields.io/badge/Profit_Factor-1.79-FBBF24?style=for-the-badge" alt="Profit Factor">
+  <img src="https://img.shields.io/badge/Net_Return-+1,204R-00F0FF?style=for-the-badge" alt="Net Return">
+  <img src="https://img.shields.io/badge/Candles_Tested-4.75M-10B981?style=for-the-badge" alt="Candles">
 </p>
+
+---
+
+## 🌟 Release v2.0: Quant-Hardened Reality Check
+
+Following an in-depth quantitative methodology audit, version 2.0 strips away theoretical backtest inflation to model realistic institutional execution:
+
+| Flaw / Dimension | v1.0 Legacy Architecture | v2.0 Quant-Hardened Reality |
+| :--- | :--- | :--- |
+| **Intra-bar Execution** | Optimistic: if candle touched +1.5R and SL, marked BE. | **Pessimistic Worst-Case:** assumes SL was triggered first. |
+| **Limit Order Fill** | Phantom fill: assumed 100% fill at FVG median. | **Verified Fill:** requires subsequent bar low/high to touch entry. |
+| **Exchange Friction** | Zero fees, zero slippage modeled. | **Deducted:** $-0.18\text{R}$ fixed taker fee per trade (Binance VIP0). |
+| **Asset Universe** | 10 Cryptocurrencies (2021 – 2024). | **20 Top Cryptos + SPY, QQQ, USDJPY (2018 – 2026).** |
+| **Candles Evaluated** | 1,401,860 candles (15m). | **4,753,163 candles (15m).** |
+| **AI Feature Matrix** | Partial synthetic feature training. | **100% empirical feature extraction from real trade history.** |
+| **Feature 14 Operator** | `high - low / atr` (division precedence bug). | Fixed: `(high - low) / atr`. |
+| **True Performance** | Theoretical 74.4% WR / 7.26 PF (unrealistic). | **Sustainable 49.5% WR / 1.79 PF / +1,204R Net After Fees.** |
 
 ---
 
