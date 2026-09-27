@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
 Main Execution Engine:
-Orchestrates Tokyo Session Breakout Trading Bot with ML Gatekeeper & Gemini Meta-Reviewer
+Multi-Asset Institutional Tokyo Breakout Auto-Trade Bot (ICT/RTM + ML)
+Monitors Top 10 Liquid Cryptos with Res-MLP Gatekeeper & Zero External Dependencies
 """
 
 import time
 import sys
 from datetime import datetime, timezone
+from typing import Dict, Any, List
 from config import CONFIG
 from data_engine import DataEngine
 from trend_filter import TrendFilter
@@ -17,15 +19,18 @@ from execution_risk import ExecutionRiskManager
 from gemini_reviewer import GeminiReviewer
 
 def run_bot(paper_mode: bool = True):
-    print("=" * 70)
+    symbols = CONFIG["symbols"] if CONFIG.get("multi_asset_mode") else [CONFIG["symbol"]]
+    
+    print("=" * 75)
     print(" 🚀 Institutional Tokyo Breakout Auto-Trade Bot (ICT/RTM + ML)")
-    print(f"    Symbol: {CONFIG['symbol']} | Mode: {'PAPER TRADING' if paper_mode else 'LIVE'}")
-    print(f"    Risk per Trade: {CONFIG['risk']['risk_per_trade_pct'] * 100}% | Min R:R: 1:{CONFIG['risk']['min_rr_ratio']}")
-    print(f"    ML Learning Rate: {CONFIG['ml_gatekeeper']['learning_rate']} (Conservative Anti-Overfitting)")
-    print("=" * 70)
+    print(f"    Mode: {'MULTI-ASSET (' + str(len(symbols)) + ' Pairs)' if len(symbols) > 1 else symbols[0]} | {'PAPER TRADING' if paper_mode else 'LIVE'}")
+    print(f"    Assets: {', '.join(symbols[:5])}...")
+    print(f"    Risk per Trade: {CONFIG['risk']['risk_per_trade_pct'] * 100}% | Min R:R: 1:{CONFIG['risk']['min_rr_ratio']} | BE: +{CONFIG['risk']['breakeven_trigger_r']}R")
+    print(f"    ML Gatekeeper: Res-MLP Gatekeeper (Threshold: {CONFIG['ml_gatekeeper']['confidence_threshold']:.0%})")
+    print("=" * 75)
 
-    # Initialize modules
-    data_engine = DataEngine(symbol=CONFIG["symbol"])
+    # Initialize per-symbol Data Engines
+    data_engines = {sym: DataEngine(symbol=sym) for sym in symbols}
     trend_filter = TrendFilter()
     validator = BreakoutValidator(
         min_volume_ratio=CONFIG["strategy"]["min_volume_ratio"],
@@ -49,107 +54,108 @@ def run_bot(paper_mode: bool = True):
     )
 
     tick_count = 0
+    max_total_trades = CONFIG["risk"].get("max_total_open_trades", 3)
 
     while True:
         try:
             tick_count += 1
             now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-
-            # 1. Fetch Market Data
-            candles_15m = data_engine.fetch_klines("15m", limit=120)
-            candles_1h = data_engine.fetch_klines("1h", limit=80)
-            candles_4h = data_engine.fetch_klines("4h", limit=50)
-
-            if not candles_15m or not candles_1h:
-                time.sleep(15)
-                continue
-
-            current_candle = candles_15m[-1]
-            bias, htf_meta = trend_filter.get_market_bias(candles_1h, candles_4h)
-
-            # 2. Monitor & Update Existing Open Trades
             open_trades = trade_logger.get_open_trades()
-            for trade in open_trades:
-                update_res = risk_manager.check_trade_update(trade, current_candle)
-                if update_res["is_closed"]:
-                    trade_logger.update_trade_exit(
-                        trade_id=trade["trade_id"],
-                        exit_price=update_res["exit_price"],
-                        status=update_res["status"],
-                        pnl_usd=update_res["pnl_usd"],
-                        pnl_r=update_res["pnl_r"]
-                    )
-                    print("\n" + "#" * 65)
-                    print(f"🏁 TRADE CLOSED #{trade['trade_id']} ({trade['side']}) | Result: {update_res['status']}")
-                    print(f"   Exit Price: {update_res['exit_price']:,.2f} USD | Net PnL: {update_res['pnl_usd']:+,.2f} USD ({update_res['pnl_r']:+.2f}R)")
-                    print("#" * 65 + "\n")
+            open_symbols = {t["symbol"] for t in open_trades}
 
-                    # Online ML update step
-                    features = eval(trade["features_json"])
-                    was_win = (update_res["status"] == "CLOSED_WIN")
-                    ml_gatekeeper.update_model(features, was_win)
+            status_items = []
 
-            # Periodically review losing trades via Gemini
-            if tick_count % 20 == 0 and CONFIG["ai_reviewer"]["enabled"]:
-                ai_reviewer.review_losing_trades(trade_logger)
+            for sym in symbols:
+                de = data_engines[sym]
+                candles_15m = de.fetch_klines("15m", limit=80)
+                candles_1h = de.fetch_klines("1h", limit=50)
+                candles_4h = de.fetch_klines("4h", limit=30)
 
-            # 3. Check for New Trading Opportunities
-            # Only evaluate entry if no trade is currently open
-            if not open_trades:
-                tokyo_data = data_engine.extract_latest_tokyo_session(candles_15m)
+                if not candles_15m or not candles_1h:
+                    continue
+
+                current_candle = candles_15m[-1]
                 bias, htf_meta = trend_filter.get_market_bias(candles_1h, candles_4h)
 
-                if tokyo_data:
-                    # Check Tokyo High Breakout (Long setup)
-                    if not tokyo_data["high_mitigated"] and bias == "BULLISH":
-                        signal = validator.evaluate_breakout(
-                            candles_15m, tokyo_data["high"], "TOKYO_HIGH", bias
+                # Monitor open trades for this specific symbol
+                sym_open = [t for t in open_trades if t["symbol"] == sym]
+                for trade in sym_open:
+                    update_res = risk_manager.check_trade_update(trade, current_candle)
+                    if update_res["is_closed"]:
+                        trade_logger.update_trade_exit(
+                            trade_id=trade["trade_id"],
+                            exit_price=update_res["exit_price"],
+                            status=update_res["status"],
+                            pnl_usd=update_res["pnl_usd"],
+                            pnl_r=update_res["pnl_r"]
                         )
-                        if signal:
-                            _process_potential_signal(
-                                signal, tokyo_data, htf_meta, candles_15m,
-                                ml_gatekeeper, risk_manager, trade_logger
-                            )
+                        print(f"\n🏁 TRADE CLOSED #{trade['trade_id']} on {sym} ({trade['side']}) | Result: {update_res['status']}")
+                        print(f"   Exit: {update_res['exit_price']:,.2f} | PnL: {update_res['pnl_usd']:+,.2f} USD ({update_res['pnl_r']:+.2f}R)\n")
 
-                    # Check Tokyo Low Breakout (Short setup)
-                    if not tokyo_data["low_mitigated"] and bias == "BEARISH":
-                        signal = validator.evaluate_breakout(
-                            candles_15m, tokyo_data["low"], "TOKYO_LOW", bias
-                        )
-                        if signal:
-                            _process_potential_signal(
-                                signal, tokyo_data, htf_meta, candles_15m,
-                                ml_gatekeeper, risk_manager, trade_logger
+                # Check new breakout opportunity if not already exposed
+                if sym not in open_symbols and len(open_trades) < max_total_trades:
+                    tokyo_data = de.extract_latest_tokyo_session(candles_15m)
+                    if tokyo_data:
+                        # Long setup: Tokyo High breakout
+                        if not tokyo_data["high_mitigated"] and bias == "BULLISH":
+                            signal = validator.evaluate_breakout(
+                                candles_15m, tokyo_data["high"], "TOKYO_HIGH", bias
                             )
+                            if signal:
+                                _process_potential_signal(
+                                    sym, signal, tokyo_data, htf_meta, candles_15m,
+                                    ml_gatekeeper, risk_manager, trade_logger
+                                )
 
-            # Live CLI Heartbeat
-            status_text = f"[{now_str}] Live: {current_candle['close']:,.2f} $ | HTF: {htf_meta['bias']} | Open Trades: {len(open_trades)}"
-            print(status_text, end="\r")
+                        # Short setup: Tokyo Low breakout
+                        if not tokyo_data["low_mitigated"] and bias == "BEARISH":
+                            signal = validator.evaluate_breakout(
+                                candles_15m, tokyo_data["low"], "TOKYO_LOW", bias
+                            )
+                            if signal:
+                                _process_potential_signal(
+                                    sym, signal, tokyo_data, htf_meta, candles_15m,
+                                    ml_gatekeeper, risk_manager, trade_logger
+                                )
+
+                # Status snippet for top symbols
+                clean_sym = sym.replace("USDT", "")
+                status_items.append(f"{clean_sym}:{current_candle['close']:,.1f}")
+
+            # Heartbeat display
+            sample_status = " | ".join(status_items[:5])
+            print(f"[{now_str}] Portfolio ({len(symbols)} Assets) | Open: {len(open_trades)}/{max_total_trades} | {sample_status}", end="\r")
+
+            # Review losing trades if enabled
+            if tick_count % 30 == 0 and CONFIG["ai_reviewer"]["enabled"]:
+                ai_reviewer.review_losing_trades(trade_logger)
 
             time.sleep(15)
 
         except KeyboardInterrupt:
-            print("\n[INFO] Bot stopped safely by user.")
+            print("\n[INFO] Multi-Asset Bot stopped safely by user.")
             break
         except Exception as e:
             print(f"\n[Engine Loop Error]: {e}")
             time.sleep(10)
 
-def _process_potential_signal(signal, tokyo_data, htf_meta, candles_15m, ml_gatekeeper, risk_manager, trade_logger):
-    # Extract 15 features
+def _process_potential_signal(symbol: str, signal: Dict[str, Any], tokyo_data: Dict[str, Any],
+                              htf_meta: Dict[str, Any], candles_15m: List[Dict[str, Any]],
+                              ml_gatekeeper: MLGatekeeper, risk_manager: ExecutionRiskManager,
+                              trade_logger: TradeLogger):
     features = ml_gatekeeper.extract_features(signal, tokyo_data, htf_meta, candles_15m)
     approved, score, details = ml_gatekeeper.evaluate_signal(features)
 
-    print("\n\n" + "=" * 65)
-    print(f"🚨 VALID BREAKOUT DETECTED: {signal['signal_type']} @ {signal['level_broken']:,.2f} USD")
+    print("\n\n" + "=" * 70)
+    print(f"🚨 VALID BREAKOUT DETECTED: {symbol} {signal['signal_type']} @ {signal['level_broken']:,.2f} USD")
     print(f"   Entry: {signal['entry_price']:,.2f} | SL: {signal['stop_loss']:,.2f} | TP: {signal['take_profit']:,.2f} (R:R: 1:{signal['rr_ratio']})")
-    print(f"   Vol Ratio: {signal['vol_ratio']}x | Has FVG: {signal['has_fvg']} ({signal['fvg_size']:.2f} USD)")
+    print(f"   Volume Ratio: {signal['vol_ratio']}x | FVG: {signal['has_fvg']} ({signal['fvg_size']:.2f} USD)")
     print(f"🧠 AI Gatekeeper Confidence Score: {score:.1%} (Threshold: {ml_gatekeeper.confidence_threshold:.0%})")
 
     if approved:
         pos_size, risk_usd = risk_manager.calculate_position_size(signal["entry_price"], signal["stop_loss"])
         trade_id = trade_logger.log_new_trade(
-            symbol=CONFIG["symbol"],
+            symbol=symbol,
             side=signal["signal_type"],
             entry_price=signal["entry_price"],
             stop_loss=signal["stop_loss"],
@@ -159,11 +165,11 @@ def _process_potential_signal(signal, tokyo_data, htf_meta, candles_15m, ml_gate
             ml_confidence=score,
             features=features
         )
-        print(f"   ✅ AI APPROVED TRADE! Executed Trade #{trade_id}")
-        print(f"   Position Size: {pos_size:.4f} BTC | Dollar Risk: ${risk_usd:,.2f}")
+        print(f"   ✅ AI APPROVED TRADE! Executed Trade #{trade_id} on {symbol}")
+        print(f"   Position Units: {pos_size:.4f} | Risk Budget: ${risk_usd:,.2f}")
     else:
-        print(f"   ❌ AI REJECTED TRADE (Score {score:.1%} below safety threshold). Filtered noise successfully.")
-    print("=" * 65 + "\n")
+        print(f"   ❌ AI REJECTED TRADE (Score {score:.1%} below safety threshold). Signal filtered.")
+    print("=" * 70 + "\n")
 
 if __name__ == "__main__":
     run_bot(paper_mode=True)

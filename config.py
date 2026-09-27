@@ -5,8 +5,13 @@ Global Configuration for Tokyo Session Breakout Trading Bot
 from typing import Dict, Any
 
 CONFIG: Dict[str, Any] = {
-    # Market & Symbol
+    # Market & Symbols
     "symbol": "BTCUSDT",
+    "symbols": [
+        "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT",
+        "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "LINKUSDT", "LTCUSDT"
+    ],
+    "multi_asset_mode": True,  # True = Monitor all 10 trained liquid symbols simultaneously
     "execution_timeframe": "15m",
     "htf_timeframes": ["1h", "4h"],
     
@@ -21,7 +26,8 @@ CONFIG: Dict[str, Any] = {
         "risk_per_trade_pct": 0.01,    # Exactly 1.0% of total equity
         "min_rr_ratio": 2.5,           # Minimum 1:2.5 Risk-to-Reward ratio
         "breakeven_trigger_r": 1.5,    # Move SL to Entry at +1.5R
-        "max_open_trades": 1,          # Only 1 trade active at any time
+        "max_open_trades_per_symbol": 1,
+        "max_total_open_trades": 3,    # Maximum concurrent portfolio exposure
         "default_equity_usd": 10000.0, # Default initial balance for paper trading
     },
     
@@ -42,13 +48,13 @@ CONFIG: Dict[str, Any] = {
         "train_validation_split": 0.8,
     },
     
-    # Post-Mortem AI Reviewer (Gemini via 9Router or Direct)
+    # Post-Mortem AI Reviewer (Optional: Gemini via 9Router or OpenAI-compatible endpoint)
     "ai_reviewer": {
-        "enabled": True,
+        "enabled": False,  # Optional: Keep False for zero external dependencies
         "endpoint": "http://127.0.0.1:20128/v1/chat/completions",
-        "model": "ag/gemini-3.8-flash-low",  # Strictly low reasoning to prevent hyper-rationalization
+        "model": "ag/gemini-3.8-flash-low",
         "timeout_seconds": 30,
-        "review_frequency_trades": 5,  # Trigger AI review after every 5 closed trades
+        "review_frequency_trades": 5,
     },
     
     # Database & Storage
