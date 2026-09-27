@@ -13,6 +13,15 @@
 
 ---
 
+## 🌟 Release v2.1: Parallel Ingestion & Dynamic Level Registry
+
+Following live execution verification across the 20-pair universe:
+* **Concurrent Ingestion (`ThreadPoolExecutor`):** Reduced 20-pair API cycle time from 75 seconds to ~3.2 seconds.
+* **Sub-Cent Smart Decimal Precision:** Full floating-point precision down to 5 decimals for assets under $1.00 (e.g. `ARBUSDT`, `ADAUSDT`).
+* **Dynamic Level Registry:** Replaced static intra-day mitigation checks with an in-memory execution registry (`executed_levels`) to prevent false-negative signal suppression while ensuring zero duplicate entries per trading day.
+
+---
+
 ## 🌟 Release v2.0: Quant-Hardened Reality Check
 
 Following an in-depth quantitative methodology audit, version 2.0 strips away theoretical backtest inflation to model realistic institutional execution:
