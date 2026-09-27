@@ -8,7 +8,7 @@ Machine Learning Gatekeeper:
 import os
 import math
 import json
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 class MLGatekeeper:
     FEATURE_NAMES = [
@@ -44,6 +44,8 @@ class MLGatekeeper:
         self.weights: List[float] = []
         self.bias: float = 0.0
         self.total_trained_samples: int = 0
+        self.norm_mean: Optional[List[float]] = None
+        self.norm_std: Optional[List[float]] = None
         self._load_or_initialize_weights()
 
     def _load_or_initialize_weights(self):
@@ -54,6 +56,8 @@ class MLGatekeeper:
                     data = json.load(f)
                     self.weights = data.get("weights", [])
                     self.bias = data.get("bias", 0.0)
+                    self.norm_mean = data.get("norm_mean")
+                    self.norm_std = data.get("norm_std")
                     self.total_trained_samples = data.get("samples", 0)
                     if len(self.weights) == len(self.FEATURE_NAMES):
                         return
@@ -147,8 +151,8 @@ class MLGatekeeper:
             else:
                 break
         f13 = min(run_count / 5.0, 1.0)
-        # 14. range_expansion_ratio
-        f14 = min(current_candle["high"] - current_candle["low"] / max(current_candle.get("atr14", 50.0), 1.0), 3.0)
+        # 14. range_expansion_ratio (Explicit precedence)
+        f14 = min((current_candle["high"] - current_candle["low"]) / max(current_candle.get("atr14", 50.0), 1.0), 3.0)
 
         return [round(x, 4) for x in [f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14]]
 
@@ -160,8 +164,14 @@ class MLGatekeeper:
         if len(features) != len(self.weights):
             return False, 0.0, {"error": "Feature count mismatch"}
 
+        # Normalize features if calibration statistics are loaded
+        if self.norm_mean and self.norm_std and len(self.norm_mean) == len(features):
+            norm_feats = [(f - m) / (s + 1e-6) for f, m, s in zip(features, self.norm_mean, self.norm_std)]
+        else:
+            norm_feats = features
+
         # Dot product
-        z = self.bias + sum(w * x for w, x in zip(self.weights, features))
+        z = self.bias + sum(w * x for w, x in zip(self.weights, norm_feats))
         # Sigmoid activation with clamp to avoid overflow
         z_clamped = max(min(z, 20.0), -20.0)
         prob = 1.0 / (1.0 + math.exp(-z_clamped))
