@@ -122,34 +122,32 @@ def run_bot(paper_mode: bool = True):
                         print(f"\n🏁 TRADE CLOSED #{trade['trade_id']} on {sym} ({trade['side']}) | Result: {update_res['status']}")
                         print(f"   Exit: {update_res['exit_price']:,.2f} | PnL: {update_res['pnl_usd']:+,.2f} USD ({update_res['pnl_r']:+.2f}R)\n")
 
-                # Check new breakout opportunity if not already exposed
-                if sym not in open_symbols and len(open_trades) < max_total_trades:
+                # Check new breakout opportunity only after Tokyo session concludes (>= 07:00 UTC)
+                if current_candle["utc_dt"].hour >= 7 and sym not in open_symbols and len(open_trades) < max_total_trades:
                     tokyo_data = de.extract_latest_tokyo_session(candles_15m)
                     if tokyo_data:
                         # Long setup: Tokyo High breakout
-                        high_key = (sym, tokyo_data["date"], "TOKYO_HIGH")
-                        if high_key not in executed_levels and bias == "BULLISH":
+                        if bias == "BULLISH" and not trade_logger.is_level_executed(sym, tokyo_data["date"], "TOKYO_HIGH"):
                             signal = validator.evaluate_breakout(
                                 candles_15m, tokyo_data["high"], "TOKYO_HIGH", bias
                             )
                             if signal:
-                                executed_levels.add(high_key)
                                 _process_potential_signal(
                                     sym, signal, tokyo_data, htf_meta, candles_15m,
-                                    ml_gatekeeper, risk_manager, trade_logger, notifier
+                                    ml_gatekeeper, risk_manager, trade_logger, notifier,
+                                    level_type="TOKYO_HIGH", session_date=tokyo_data["date"]
                                 )
 
                         # Short setup: Tokyo Low breakout
-                        low_key = (sym, tokyo_data["date"], "TOKYO_LOW")
-                        if low_key not in executed_levels and bias == "BEARISH":
+                        if bias == "BEARISH" and not trade_logger.is_level_executed(sym, tokyo_data["date"], "TOKYO_LOW"):
                             signal = validator.evaluate_breakout(
                                 candles_15m, tokyo_data["low"], "TOKYO_LOW", bias
                             )
                             if signal:
-                                executed_levels.add(low_key)
                                 _process_potential_signal(
                                     sym, signal, tokyo_data, htf_meta, candles_15m,
-                                    ml_gatekeeper, risk_manager, trade_logger, notifier
+                                    ml_gatekeeper, risk_manager, trade_logger, notifier,
+                                    level_type="TOKYO_LOW", session_date=tokyo_data["date"]
                                 )
 
                 # Status snippet for top symbols
@@ -176,7 +174,8 @@ def run_bot(paper_mode: bool = True):
 def _process_potential_signal(symbol: str, signal: Dict[str, Any], tokyo_data: Dict[str, Any],
                               htf_meta: Dict[str, Any], candles_15m: List[Dict[str, Any]],
                               ml_gatekeeper: MLGatekeeper, risk_manager: ExecutionRiskManager,
-                              trade_logger: TradeLogger, notifier: TelegramNotifier):
+                              trade_logger: TradeLogger, notifier: TelegramNotifier,
+                              level_type: str = "TOKYO_LEVEL", session_date: str = ""):
     features = ml_gatekeeper.extract_features(signal, tokyo_data, htf_meta, candles_15m)
     approved, score, details = ml_gatekeeper.evaluate_signal(features)
 
@@ -193,6 +192,10 @@ def _process_potential_signal(symbol: str, signal: Dict[str, Any], tokyo_data: D
     print(f"🧠 AI Gatekeeper Confidence Score: {score:.1%} (Threshold: {ml_gatekeeper.confidence_threshold:.0%})")
 
     if approved:
+        # Record executed level in SQLite to prevent duplicate re-entries even across restarts
+        if session_date and level_type:
+            trade_logger.record_executed_level(symbol, session_date, level_type)
+
         pos_size, risk_usd = risk_manager.calculate_position_size(signal["entry_price"], signal["stop_loss"])
         trade_id = trade_logger.log_new_trade(
             symbol=symbol,

@@ -67,20 +67,21 @@ class BreakoutValidator:
             if c0["close"] <= level or vol_ratio < self.min_volume_ratio:
                 return None # Sweep or lack of volume
 
-            # Candle 1: Check for FVG and ensure it didn't dump back into range
+            # Candle 1: Confirmation Candle - MUST be closed and held above level
+            if not c1 or not c1.get("is_closed", False):
+                return None # Wait for Candle 1 to close to confirm breakout
+
+            if c1["close"] <= level:
+                return None # Failed breakout / 2-candle bull trap
+
+            # Check for FVG
             has_fvg = False
             fvg_size = 0.0
             fvg_midpoint = level
-            if c1:
-                # Bullish FVG between Candle 1 Low and Candle -1 High
-                if c1["low"] > c_prev["high"]:
-                    has_fvg = True
-                    fvg_size = c1["low"] - c_prev["high"]
-                    fvg_midpoint = (c1["low"] + c_prev["high"]) / 2.0
-                
-                # Check rejection: If candle 1 closed below level -> 2-candle bull trap
-                if c1["is_closed"] and c1["close"] < level:
-                    return None
+            if c1["low"] > c_prev["high"]:
+                has_fvg = True
+                fvg_size = c1["low"] - c_prev["high"]
+                fvg_midpoint = (c1["low"] + c_prev["high"]) / 2.0
 
             # Candle 2: Sustained acceptance check
             if c2 and c2["is_closed"] and c2["close"] < level:
@@ -123,19 +124,21 @@ class BreakoutValidator:
             if c0["close"] >= level or vol_ratio < self.min_volume_ratio:
                 return None # Sweep or lack of volume
 
-            # Candle 1: Check for Bearish FVG and ensure it didn't surge back into range
+            # Candle 1: Confirmation Candle - MUST be closed and held below level
+            if not c1 or not c1.get("is_closed", False):
+                return None # Wait for Candle 1 to close to confirm breakout
+
+            if c1["close"] >= level:
+                return None # Failed breakout / 2-candle bear trap
+
+            # Check for Bearish FVG
             has_fvg = False
             fvg_size = 0.0
             fvg_midpoint = level
-            if c1:
-                # Bearish FVG between Candle -1 Low and Candle 1 High
-                if c_prev["low"] > c1["high"]:
-                    has_fvg = True
-                    fvg_size = c_prev["low"] - c1["high"]
-                    fvg_midpoint = (c_prev["low"] + c1["high"]) / 2.0
-
-                if c1["is_closed"] and c1["close"] > level:
-                    return None # 2-candle bear trap
+            if c_prev["low"] > c1["high"]:
+                has_fvg = True
+                fvg_size = c_prev["low"] - c1["high"]
+                fvg_midpoint = (c_prev["low"] + c1["high"]) / 2.0
 
             # Candle 2: Sustained acceptance
             if c2 and c2["is_closed"] and c2["close"] > level:

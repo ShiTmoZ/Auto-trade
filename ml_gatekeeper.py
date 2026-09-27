@@ -107,55 +107,53 @@ class MLGatekeeper:
         htf_data: Dict[str, Any],
         recent_candles: List[Dict[str, Any]]
     ) -> List[float]:
-        """Extracts the 15-dimensional numerical feature vector from market context."""
-        entry = signal["entry_price"]
-        current_candle = recent_candles[-1]
-        
-        # 0. vol_ratio
-        f0 = min(signal.get("vol_ratio", 1.0) / 3.0, 2.0)
-        # 1. fvg_size_pct
-        f1 = (signal.get("fvg_size", 0.0) / entry) * 100.0
-        # 2. has_fvg
-        f2 = 1.0 if signal.get("has_fvg", False) else 0.0
-        # 3. candle0_body_ratio
-        c0_body = signal.get("candle0_body", 10.0)
-        c0_range = max(signal.get("atr14", 50.0), 10.0)
-        f3 = min(c0_body / c0_range, 1.0)
-        # 4. risk_atr_ratio
-        f4 = min(signal.get("risk_distance", 50.0) / max(signal.get("atr14", 50.0), 1.0), 3.0)
-        # 5. tokyo_range_pct
-        f5 = (tokyo_data.get("range_usd", 300.0) / entry) * 100.0
-        # 6. hour_utc (normalized)
-        utc_dt = current_candle["utc_dt"]
-        f6 = utc_dt.hour / 24.0
-        # 7. day_of_week (normalized)
-        f7 = utc_dt.weekday() / 6.0
-        # 8. htf_alignment_strength
-        f8 = 1.0 if (htf_data.get("trend_1h") == htf_data.get("trend_4h")) else 0.6
-        # 9. retest_depth_pct
-        f9 = (abs(entry - signal["level_broken"]) / entry) * 100.0
-        # 10. volatility_ratio
-        f10 = min(current_candle.get("atr14", 50.0) / 100.0, 2.5)
-        # 11. dist_from_tokyo_open_pct
-        f11 = (abs(entry - tokyo_data.get("open", entry)) / entry) * 100.0
-        # 12. momentum_3c_pct
-        if len(recent_candles) >= 4:
-            p3 = recent_candles[-4]["close"]
-            f12 = ((entry - p3) / p3) * 100.0
-        else:
-            f12 = 0.0
-        # 13. consecutive_run
-        run_count = 1
-        for k in range(len(recent_candles) - 2, max(0, len(recent_candles) - 6), -1):
-            if recent_candles[k]["close"] > recent_candles[k]["open"]:
-                run_count += 1
-            else:
-                break
-        f13 = min(run_count / 5.0, 1.0)
-        # 14. range_expansion_ratio (Explicit precedence)
-        f14 = min((current_candle["high"] - current_candle["low"]) / max(current_candle.get("atr14", 50.0), 1.0), 3.0)
+        """
+        Unified 15-Feature Quantitative Vector matching multi_asset_pipeline.py & ml_weights.json exactly.
+        """
+        c0 = recent_candles[-2] if len(recent_candles) >= 2 and not recent_candles[-1].get("is_closed", True) else recent_candles[-1]
+        c1 = recent_candles[-1]
 
-        return [round(x, 4) for x in [f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14]]
+        c0_close = max(1.0, float(c0.get("close", 1.0)))
+        tokyo_range = abs(float(tokyo_data.get("high", c0_close)) - float(tokyo_data.get("low", c0_close)))
+        vol_ratio = float(signal.get("vol_ratio", 1.0))
+        has_fvg = bool(signal.get("has_fvg", False))
+
+        ema4h = float(htf_data.get("ema50_4h", c0_close))
+        trend_dist = c0_close - ema4h
+
+        rsi_val = float(c0.get("rsi14", 50.0))
+        if rsi_val == 50.0 and len(recent_candles) >= 15:
+            diffs = [recent_candles[k]["close"] - recent_candles[k-1]["close"] for k in range(-14, 0)]
+            gains = [d for d in diffs if d > 0]
+            losses = [-d for d in diffs if d < 0]
+            avg_gain = sum(gains) / 14.0 if gains else 1e-6
+            avg_loss = sum(losses) / 14.0 if losses else 1e-6
+            rs = avg_gain / avg_loss
+            rsi_val = 100.0 - (100.0 / (1.0 + rs))
+
+        body_ratio = abs(c0["close"] - c0["open"]) / max(0.01, c0["high"] - c0["low"])
+        range_expansion = (c0["high"] - c0["low"]) / max(1e-5, c0.get("atr14", 1.0))
+        c1_body_ratio = abs(c1["close"] - c1["open"]) / max(0.01, c1["high"] - c1["low"])
+
+        utc_dt = c0["utc_dt"]
+
+        return [
+            min(5.0, vol_ratio),
+            1.0 if has_fvg else 0.0,
+            body_ratio,
+            tokyo_range / c0_close,
+            c0.get("atr14", 1.0) / c0_close,
+            float(utc_dt.hour) / 24.0,
+            float(utc_dt.weekday()) / 6.0,
+            1.0 if trend_dist > 0 else 0.0,
+            abs(trend_dist) / c0_close,
+            (rsi_val - 50.0) / 50.0,
+            c1_body_ratio,
+            vol_ratio / 3.0,
+            range_expansion,
+            1.0 if c0["close"] > c0["open"] else 0.0,
+            0.5
+        ]
 
     def evaluate_signal(self, features: List[float]) -> Tuple[bool, float, Dict[str, Any]]:
         """

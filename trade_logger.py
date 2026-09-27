@@ -15,7 +15,7 @@ class TradeLogger:
     def _init_db(self):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.executescript("""
             CREATE TABLE IF NOT EXISTS trades (
                 trade_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TEXT NOT NULL,
@@ -34,7 +34,14 @@ class TradeLogger:
                 pnl_usd REAL,
                 pnl_r REAL,
                 gemini_critique TEXT
-            )
+            );
+            CREATE TABLE IF NOT EXISTS executed_levels (
+                symbol TEXT NOT NULL,
+                session_date TEXT NOT NULL,
+                level_type TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (symbol, session_date, level_type)
+            );
             """)
             conn.commit()
 
@@ -111,4 +118,23 @@ class TradeLogger:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("UPDATE trades SET gemini_critique = ? WHERE trade_id = ?", (critique, trade_id))
+            conn.commit()
+
+    def is_level_executed(self, symbol: str, session_date: str, level_type: str) -> bool:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            SELECT 1 FROM executed_levels 
+            WHERE symbol = ? AND session_date = ? AND level_type = ?
+            """, (symbol, session_date, level_type))
+            return cursor.fetchone() is not None
+
+    def record_executed_level(self, symbol: str, session_date: str, level_type: str):
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+            INSERT OR IGNORE INTO executed_levels (symbol, session_date, level_type, created_at)
+            VALUES (?, ?, ?, ?)
+            """, (symbol, session_date, level_type, now_str))
             conn.commit()
