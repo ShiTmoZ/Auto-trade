@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0E1626" />
+      <stop offset="100%" stop-color="#090D16" />
+    </linearGradient>
+    <linearGradient id="line-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="100%" stop-color="#00FFA3" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="480" fill="#060A12" rx="16" />
+  <rect width="998" height="478" x="1" y="1" fill="none" stroke="rgba(255, 255, 255, 0.06)" rx="16" />
+
+  <!-- Section Title -->
+  <text x="50" y="50" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="800">
+    STRATEGY EXECUTION PIPELINE
+  </text>
+  <text x="50" y="75" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14">
+    Discrete-Event Execution from Asian Liquidity Extraction to Neural Confirmation
+  </text>
+
+  <!-- Step 1: Asian Session -->
+  <g transform="translate(50, 110)">
+    <rect width="165" height="310" rx="12" fill="url(#card-grad)" stroke="rgba(0, 240, 255, 0.3)" filter="url(#shadow)" />
+    <circle cx="28" cy="35" r="14" fill="rgba(0, 240, 255, 0.15)" />
+    <text x="28" y="40" fill="#00F0FF" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">1</text>
+    <text x="52" y="39" fill="#00F0FF" font-family="sans-serif" font-size="13" font-weight="700">ASIAN RANGE</text>
+    
+    <text x="18" y="80" fill="#E2E8F0" font-family="sans-serif" font-size="13" font-weight="600">Liquidity Discovery</text>
+    <text x="18" y="105" fill="#94A3B8" font-family="sans-serif" font-size="11">00:00 - 07:00 UTC</text>
+    <text x="18" y="125" fill="#64748B" font-family="sans-serif" font-size="11">(03:30 - 10:30 Tehran)</text>
+
+    <line x1="18" y1="150" x2="147" y2="150" stroke="rgba(255,255,255,0.08)" />
+
+    <text x="18" y="180" fill="#F87171" font-family="sans-serif" font-size="12" font-weight="600">Asia High (BSL)</text>
+    <text x="18" y="200" fill="#64748B" font-family="sans-serif" font-size="11">Buy-side stop runs</text>
+
+    <text x="18" y="240" fill="#4ADE80" font-family="sans-serif" font-size="12" font-weight="600">Asia Low (SSL)</text>
+    <text x="18" y="260" fill="#64748B" font-family="sans-serif" font-size="11">Sell-side stop runs</text>
+
+    <rect x="18" y="275" width="129" height="22" rx="4" fill="rgba(0, 240, 255, 0.08)" />
+    <text x="82" y="290" fill="#00F0FF" font-family="sans-serif" font-size="10" font-weight="600" text-anchor="middle">Zero Trades Taken</text>
+  </g>
+
+  <!-- Step 2: Displacement -->
+  <g transform="translate(235, 110)">
+    <rect width="165" height="310" rx="12" fill="url(#card-grad)" stroke="rgba(255, 255, 255, 0.1)" filter="url(#shadow)" />
+    <circle cx="28" cy="35" r="14" fill="rgba(255, 255, 255, 0.1)" />
+    <text x="28" y="40" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">2</text>
+    <text x="52" y="39" fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="700">DISPLACEMENT</text>
+
+    <text x="18" y="80" fill="#E2E8F0" font-family="sans-serif" font-size="13" font-weight="600">Candle 0 Trigger</text>
+    <text x="18" y="105" fill="#94A3B8" font-family="sans-serif" font-size="11">London / NY Open</text>
+
+    <line x1="18" y1="130" x2="147" y2="130" stroke="rgba(255,255,255,0.08)" />
+
+    <text x="18" y="160" fill="#FBBF24" font-family="sans-serif" font-size="11" font-weight="600">Volume Condition:</text>
+    <text x="18" y="180" fill="#E2E8F0" font-family="sans-serif" font-size="12">Vol &gt;= 1.3x SMA20</text>
+
+    <text x="18" y="220" fill="#FBBF24" font-family="sans-serif" font-size="11" font-weight="600">Real Body Close:</text>
+    <text x="18" y="240" fill="#E2E8F0" font-family="sans-serif" font-size="12">Close &gt; Asia High</text>
+
+    <rect x="18" y="275" width="129" height="22" rx="4" fill="rgba(239, 68, 68, 0.1)" />
+    <text x="82" y="290" fill="#F87171" font-family="sans-serif" font-size="10" font-weight="600" text-anchor="middle">Reject Wicks (Sweeps)</text>
+  </g>
+
+  <!-- Step 3: Imbalance & Anti-Dump -->
+  <g transform="translate(420, 110)">
+    <rect width="165" height="310" rx="12" fill="url(#card-grad)" stroke="rgba(255, 255, 255, 0.1)" filter="url(#shadow)" />
+    <circle cx="28" cy="35" r="14" fill="rgba(255, 255, 255, 0.1)" />
+    <text x="28" y="40" fill="#FFFFFF" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">3</text>
+    <text x="52" y="39" fill="#FFFFFF" font-family="sans-serif" font-size="13" font-weight="700">FVG VALIDATION</text>
+
+    <text x="18" y="80" fill="#E2E8F0" font-family="sans-serif" font-size="13" font-weight="600">Candle 1 Filter</text>
+    <text x="18" y="105" fill="#94A3B8" font-family="sans-serif" font-size="11">Fair Value Gap</text>
+
+    <line x1="18" y1="130" x2="147" y2="130" stroke="rgba(255,255,255,0.08)" />
+
+    <text x="18" y="160" fill="#38BDF8" font-family="sans-serif" font-size="11" font-weight="600">Imbalance Scan:</text>
+    <text x="18" y="180" fill="#E2E8F0" font-family="sans-serif" font-size="12">Low1 &gt; High(-1)</text>
+
+    <text x="18" y="220" fill="#38BDF8" font-family="sans-serif" font-size="11" font-weight="600">Anti-Dump Rule:</text>
+    <text x="18" y="240" fill="#E2E8F0" font-family="sans-serif" font-size="12">Close1 &gt; Asia High</text>
+
+    <rect x="18" y="275" width="129" height="22" rx="4" fill="rgba(56, 189, 248, 0.1)" />
+    <text x="82" y="290" fill="#38BDF8" font-family="sans-serif" font-size="10" font-weight="600" text-anchor="middle">Abort if Back Inside</text>
+  </g>
+
+  <!-- Step 4: Neural Gatekeeper -->
+  <g transform="translate(605, 110)">
+    <rect width="165" height="310" rx="12" fill="url(#card-grad)" stroke="rgba(112, 0, 255, 0.4)" filter="url(#shadow)" />
+    <circle cx="28" cy="35" r="14" fill="rgba(112, 0, 255, 0.2)" />
+    <text x="28" y="40" fill="#C084FC" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">4</text>
+    <text x="52" y="39" fill="#C084FC" font-family="sans-serif" font-size="13" font-weight="700">RESIDUAL MLP</text>
+
+    <text x="18" y="80" fill="#E2E8F0" font-family="sans-serif" font-size="13" font-weight="600">AI Scoring</text>
+    <text x="18" y="105" fill="#94A3B8" font-family="sans-serif" font-size="11">15 Feature Vectors</text>
+
+    <line x1="18" y1="130" x2="147" y2="130" stroke="rgba(255,255,255,0.08)" />
+
+    <text x="18" y="160" fill="#C084FC" font-family="sans-serif" font-size="11" font-weight="600">Focal Loss Model:</text>
+    <text x="18" y="180" fill="#E2E8F0" font-family="sans-serif" font-size="12">Dense 64 + 32</text>
+
+    <text x="18" y="220" fill="#C084FC" font-family="sans-serif" font-size="11" font-weight="600">Threshold:</text>
+    <text x="18" y="240" fill="#E2E8F0" font-family="sans-serif" font-size="12">P(Win) &gt;= 0.65</text>
+
+    <rect x="18" y="275" width="129" height="22" rx="4" fill="rgba(192, 132, 252, 0.15)" />
+    <text x="82" y="290" fill="#C084FC" font-family="sans-serif" font-size="10" font-weight="600" text-anchor="middle">Filters Noise &amp; Traps</text>
+  </g>
+
+  <!-- Step 5: Execution & Breakeven -->
+  <g transform="translate(790, 110)">
+    <rect width="160" height="310" rx="12" fill="url(#card-grad)" stroke="rgba(0, 255, 163, 0.3)" filter="url(#shadow)" />
+    <circle cx="28" cy="35" r="14" fill="rgba(0, 255, 163, 0.15)" />
+    <text x="28" y="40" fill="#00FFA3" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">5</text>
+    <text x="52" y="39" fill="#00FFA3" font-family="sans-serif" font-size="13" font-weight="700">EXECUTION</text>
+
+    <text x="18" y="80" fill="#E2E8F0" font-family="sans-serif" font-size="13" font-weight="600">Trade Management</text>
+    <text x="18" y="105" fill="#94A3B8" font-family="sans-serif" font-size="11">Strict Risk Rules</text>
+
+    <line x1="18" y1="130" x2="147" y2="130" stroke="rgba(255,255,255,0.08)" />
+
+    <text x="18" y="160" fill="#00FFA3" font-family="sans-serif" font-size="11" font-weight="600">Take Profit:</text>
+    <text x="18" y="180" fill="#E2E8F0" font-family="sans-serif" font-size="12">Target = +2.5R</text>
+
+    <text x="18" y="220" fill="#00FFA3" font-family="sans-serif" font-size="11" font-weight="600">Trailing Breakeven:</text>
+    <text x="18" y="240" fill="#E2E8F0" font-family="sans-serif" font-size="12">SL -&gt; Entry at +1.5R</text>
+
+    <rect x="18" y="275" width="124" height="22" rx="4" fill="rgba(0, 255, 163, 0.1)" />
+    <text x="80" y="290" fill="#00FFA3" font-family="sans-serif" font-size="10" font-weight="600" text-anchor="middle">Capital Protected</text>
+  </g>
+</svg>

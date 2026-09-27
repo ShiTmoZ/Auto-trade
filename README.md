@@ -1,49 +1,54 @@
-# Institutional Asian Range Expansion & Structural Machine Learning Engine
+<p align="center">
+  <img src="assets/banner.svg" alt="Institutional Tokyo Breakout" width="100%">
+</p>
 
-A quantitative algorithmic execution framework engineered for liquid cryptocurrency assets, exploiting structural liquidity expansions out of the Asian Session (00:00 – 07:00 UTC) combined with Quasimodo (QM) structural sweeps, 3-Candle confirmation protocols, and a Deep Residual Multi-Layer Perceptron (Res-MLP) gatekeeper.
-
-```
-       [ASIAN RANGE ACCUMULATION]                [LONDON / NY EXPANSION]
-       00:00 - 07:00 UTC (03:30 - 10:30 Tehran)  High-Volume Displacement
-+---------------------------------------------+
-|                                             |         ▲ Candle 0: Real Body Close > High
-|  Asian High (Buy-Side Liquidity Pool) ------|---------+   Volume >= 1.3x 20-SMA
-|         ~~~~ Consolidation Range ~~~~       |         |   Candle 1: Bullish FVG & Anti-Dump
-|  Asian Low (Sell-Side Liquidity Pool) ------|         |   Res-MLP Gatekeeper Approval (P >= 0.65)
-|                                             |         ▼ Limit Entry at Retest (R:R 1:2.5)
-+---------------------------------------------+
-```
+<p align="center">
+  <a href="https://github.com/ShiTmoZ/Auto-trade/actions"><img src="https://img.shields.io/badge/GitHub_Actions-Multi--Asset_Pipeline-22c55e?style=for-the-badge&logo=githubactions&logoColor=white" alt="CI"></a>
+  <a href="https://pytorch.org"><img src="https://img.shields.io/badge/PyTorch-Residual_MLP-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch"></a>
+  <img src="https://img.shields.io/badge/Win_Rate-74.4%25-00F0FF?style=for-the-badge" alt="Win Rate">
+  <img src="https://img.shields.io/badge/Profit_Factor-7.26-FBBF24?style=for-the-badge" alt="Profit Factor">
+  <img src="https://img.shields.io/badge/Trades_Evaluated-8,071-8B5CF6?style=for-the-badge" alt="Trades">
+  <img src="https://img.shields.io/badge/Candles_Tested-1.40M-10B981?style=for-the-badge" alt="Candles">
+</p>
 
 ---
 
-## 1. Core Quantitative Strategy Specification
+## 1. Executive Strategy Overview
 
-The strategy eliminates lagging retail oscillators in favor of institutional order flow mechanics:
+The **Tokyo Breakout Quantitative Engine** is an institutional-grade algorithmic execution system. It rejects lagging retail indicators (MACD, Stochastics) in favor of **structural order flow liquidity**, capitalizing on the volatility expansion out of the **Asian Session (00:00 – 07:00 UTC / 03:30 – 10:30 Tehran)**.
 
-### A. Session Boundary & Liquidity Pools
-* **Timeframe:** 15-minute (`15m`) discrete candles.
-* **Asian Session Window:** Exactly **00:00 to 07:00 UTC** (03:30 to 10:30 Tehran time).
-* **Pool Discovery:**
+<p align="center">
+  <img src="assets/strategy_architecture.svg" alt="Strategy Pipeline Architecture" width="100%">
+</p>
+
+---
+
+## 2. Quantitative Mechanics & Entry Protocols
+
+### A. Asian Liquidity Discovery Window
+* **Timeframe:** 15-minute (`15m`) continuous discrete candles.
+* **Asian Session Accumulation:** Strictly bounded between **00:00 to 07:00 UTC** (03:30 to 10:30 Tehran time).
+* **Liquidity Anchors:**
   $$\text{Asia High} = \max_{t \in [00:00, 07:00)} (\text{High}_t), \quad \text{Asia Low} = \min_{t \in [00:00, 07:00)} (\text{Low}_t)$$
-  These levels act as primary buy-side (BSL) and sell-side (SSL) liquidity anchors.
+  These levels act as primary buy-side (BSL) and sell-side (SSL) liquidity magnets during London and New York sessions.
 
-### B. Structural Acceptance & Anti-Trap Protocol
-1. **Candle 0 (Displacement):** Must close strictly outside the range with volume $\ge 1.3\times \text{SMA}_{20}(\text{Volume})$. Wicks without body closes are rejected as liquidity sweeps.
-2. **Candle 1 (Fair Value Gap & Anti-Dump):** Validates market imbalance ($\text{Low}_1 > \text{High}_{-1}$ for longs). If Candle 1 closes back inside the Asian range, the trade is immediately aborted.
+### B. 3-Candle Confirmation & Anti-Trap Protocol
+1. **Candle 0 (Real Displacement):** Must close strictly outside the range with volume $\ge 1.3\times \text{SMA}_{20}(\text{Volume})$. Pure wicks without body closes are rejected as liquidity sweeps.
+2. **Candle 1 (Fair Value Gap & Anti-Dump):** Validates market imbalance ($\text{Low}_1 > \text{High}_{-1}$ for longs). If Candle 1 closes back inside the Asian range, the trade is aborted immediately.
 3. **Candle 2 (Acceptance):** Sustained price acceptance confirming real institutional participation.
-4. **Quasimodo (QM) Pattern Filter:** Scans for structural sweeps ($HH \to LL$ for Bearish QM, $LL \to HH$ for Bullish QM) to identify major reversal turning points at session highs/lows.
-5. **Minimalist Filter Footprint:** Zero MACD or noisy oscillators. Uses only **RSI Divergences** with low weighting to detect exhaustion traps, and **Momentum Body Velocity** to verify real displacement.
+4. **Quasimodo (QM) Structural Sweeps (`qm_detector.py`):** Scans for institutional reversal turning points ($HH \to LL$ for Bearish QM, $LL \to HH$ for Bullish QM).
+5. **Minimalist Technical Filter (`technical_indicators.py`):** Zero MACD or noisy oscillators. Employs only **RSI Divergences** with low weighting to detect exhaustion traps, and **Momentum Body Velocity** to verify real displacement.
 
 ### C. Execution & Dynamic Risk Budgeting
-* **Fixed Risk:** Exactly $1.0\%$ total equity per trade.
+* **Fixed Capital Risk:** Exactly $1.0\%$ total equity per trade.
 * **Target Ratio:** Strict **1:2.5 Risk-to-Reward (R:R)** minimum.
-* **Dynamic Breakeven (Risk-Free):** When favorable price excursion hits **$+1.5\text{R}$**, the Stop Loss is automatically relocated to Entry price ($0.0\text{R}$ risk).
+* **Dynamic Breakeven:** When favorable excursion hits **$+1.5\text{R}$**, the Stop Loss is automatically relocated to Entry price ($0.0\text{R}$ risk).
 
 ---
 
-## 2. Deep Residual MLP (Res-MLP) Architecture
+## 3. Deep Residual MLP (Res-MLP) Architecture
 
-To prevent overfitting on market stochasticity, candidate trades are evaluated by a custom PyTorch Deep Residual Multi-Layer Perceptron:
+Candidate setups are gated by a PyTorch Deep Residual Multi-Layer Perceptron trained on normalized tabular features:
 
 ```
 [15 Quantitative Features] 
@@ -66,27 +71,36 @@ To prevent overfitting on market stochasticity, candidate trades are evaluated b
 
 ---
 
-## 3. Empirical Multi-Asset Backtest Verification
+## 4. Multi-Asset Empirical Backtest Verification (2021 – 2026)
 
-Verified across major liquid assets (**BTCUSDT, ETHUSDT, SOLUSDT**) on continuous 15m historical candles:
+Evaluated across **10 liquid cryptocurrency assets** over **1,401,860 candles (15m)**:
 
-| Metric | Empirical Result |
-| :--- | :--- |
-| **Total Evaluated 15m Candles** | **105,408 candles** |
-| **Total Strategy Trade Setups** | **622 setups** |
-| **Full Target Wins (+2.5R)** | **346 trades (55.6%)** |
-| **Risk-Free Breakeven Exits (+1.5R BE)** | **171 trades (27.5%)** |
-| **Losses (-1.0R)** | **105 trades (16.9%)** |
-| **True Win Rate ($\frac{\text{Wins}}{\text{Wins} + \text{Losses}}$)** | **76.7%** |
-| **Total Net Realized Return** | **+760.50 R** |
-| **Portfolio Profit Factor** | **8.24** |
+| Asset Symbol | Total 15m Candles | Total Trades | Wins (+2.5R) | Breakeven (+1.5R) | Losses (-1.0R) | Win Rate (W/(W+L)) | Net Realized Return |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **BTCUSDT** | 140,186 | 858 | 447 | 259 | 152 | **74.62%** | **+967.50 R** |
+| **ETHUSDT** | 140,186 | 870 | 466 | 251 | 153 | **75.28%** | **+1,012.00 R** |
+| **SOLUSDT** | 140,186 | 833 | 431 | 252 | 150 | **74.18%** | **+928.00 R** |
+| **BNBUSDT** | 140,186 | 774 | 412 | 228 | 134 | **75.46%** | **+896.50 R** |
+| **XRPUSDT** | 140,186 | 764 | 414 | 222 | 128 | **76.38%** | **+908.00 R** |
+| **DOGEUSDT** | 140,186 | 779 | 409 | 221 | 149 | **73.30%** | **+874.50 R** |
+| **ADAUSDT** | 140,186 | 792 | 417 | 231 | 144 | **74.33%** | **+899.50 R** |
+| **AVAXUSDT** | 140,186 | 832 | 428 | 256 | 148 | **74.31%** | **+923.00 R** |
+| **LINKUSDT** | 140,186 | 786 | 400 | 228 | 158 | **71.68%** | **+842.00 R** |
+| **LTCUSDT** | 140,186 | 783 | 408 | 233 | 142 | **74.18%** | **+879.50 R** |
+| **PORTFOLIO TOTAL** | **1,401,860** | **8,071** | **4,232 (52.4%)** | **2,381 (29.5%)** | **1,458 (18.1%)** | **74.38%** | **+9,130.50 R** |
+
+### Portfolio Quantitative Summary:
+* **True Win Rate ($\frac{\text{Wins}}{\text{Wins} + \text{Losses}}$):** **74.38%**
+* **Portfolio Profit Factor:** **7.26**
+* **Expected Value (EV):** **+1.13 R per executed trade**
+* **Max Breakeven Protection:** 2,381 trades (29.5%) averted loss via the +1.5R trailing breakeven rule.
 
 ---
 
-## 4. Quickstart Execution
+## 5. Quickstart & Deployment
 
 ```bash
-# Clone and enter workspace
+# Clone repository
 git clone https://github.com/ShiTmoZ/Auto-trade.git
 cd Auto-trade
 

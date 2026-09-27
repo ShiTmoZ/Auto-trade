@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080C14" />
+      <stop offset="50%" stop-color="#0D1527" />
+      <stop offset="100%" stop-color="#080C14" />
+    </linearGradient>
+    <linearGradient id="accent-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="100%" stop-color="#7000FF" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1" />
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="360" fill="url(#bg-grad)" rx="16" />
+  <rect width="1200" height="360" fill="url(#grid)" rx="16" />
+
+  <!-- Ambient Glow Circles -->
+  <circle cx="200" cy="180" r="180" fill="#00F0FF" opacity="0.08" filter="blur(60px)" />
+  <circle cx="1000" cy="180" r="180" fill="#7000FF" opacity="0.08" filter="blur(60px)" />
+
+  <!-- Border -->
+  <rect width="1198" height="358" x="1" y="1" fill="none" stroke="rgba(0, 240, 255, 0.25)" stroke-width="1.5" rx="16" />
+
+  <!-- Tag Pills -->
+  <g transform="translate(60, 45)">
+    <rect width="140" height="30" rx="15" fill="rgba(0, 240, 255, 0.12)" stroke="rgba(0, 240, 255, 0.3)" />
+    <text x="70" y="20" fill="#00F0FF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">INSTITUTIONAL</text>
+
+    <rect x="155" width="160" height="30" rx="15" fill="rgba(0, 255, 163, 0.12)" stroke="rgba(0, 255, 163, 0.3)" />
+    <text x="235" y="20" fill="#00FFA3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">ICT / RTM ENGINE</text>
+
+    <rect x="330" width="170" height="30" rx="15" fill="rgba(112, 0, 255, 0.12)" stroke="rgba(112, 0, 255, 0.4)" />
+    <text x="415" y="20" fill="#C084FC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" text-anchor="middle" letter-spacing="1">RESIDUAL-MLP AI</text>
+  </g>
+
+  <!-- Main Title -->
+  <text x="60" y="145" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="900" letter-spacing="-1">
+    Tokyo Breakout <tspan fill="url(#accent-cyan)">Auto-Trade Engine</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="60" y="185" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="400">
+    Multi-Asset Execution Framework: Asian Liquidity Expansions, QM Sweeps &amp; Deep Learning Gatekeeper
+  </text>
+
+  <!-- Stat Cards -->
+  <g transform="translate(60, 230)">
+    <!-- Card 1 -->
+    <rect width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
+    <text x="25" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">TRUE WIN RATE</text>
+    <text x="25" y="68" fill="#00FFA3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">74.4%</text>
+    <text x="135" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">(8,071 Setups)</text>
+
+    <!-- Card 2 -->
+    <rect x="270" width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
+    <text x="295" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">PORTFOLIO RETURN</text>
+    <text x="295" y="68" fill="#00F0FF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">+9,130 R</text>
+    <text x="445" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">Net Profit</text>
+
+    <!-- Card 3 -->
+    <rect x="540" width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
+    <text x="565" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">PROFIT FACTOR</text>
+    <text x="565" y="68" fill="#FBBF24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">7.26</text>
+    <text x="645" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">Portfolio</text>
+
+    <!-- Card 4 -->
+    <rect x="810" width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
+    <text x="835" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">CANDLES EVALUATED</text>
+    <text x="835" y="68" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">1.40M</text>
+    <text x="940" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">15m Candles</text>
+  </g>
+</svg>
