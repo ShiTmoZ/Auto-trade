@@ -20,6 +20,9 @@ from execution_risk import ExecutionRiskManager
 from gemini_reviewer import GeminiReviewer
 from telegram_notifier import TelegramNotifier
 
+# Architectural Flag: DeepSeek Audit Bypass (Rely on pure institutional ICT/RTM validation until v3.0 model)
+ENABLE_ML_GATEKEEPER = False
+
 def run_bot(paper_mode: bool = True):
     symbols = CONFIG["symbols"] if CONFIG.get("multi_asset_mode") else [CONFIG["symbol"]]
     
@@ -177,7 +180,9 @@ def _process_potential_signal(symbol: str, signal: Dict[str, Any], tokyo_data: D
                               trade_logger: TradeLogger, notifier: TelegramNotifier,
                               level_type: str = "TOKYO_LEVEL", session_date: str = ""):
     features = ml_gatekeeper.extract_features(signal, tokyo_data, htf_meta, candles_15m)
-    approved, score, details = ml_gatekeeper.evaluate_signal(features)
+    ml_eval, score, details = ml_gatekeeper.evaluate_signal(features)
+    # Bypass phantom linear model if disabled; rely on pure institutional ICT/RTM rules
+    approved = True if not ENABLE_ML_GATEKEEPER else ml_eval
 
     # Immediately push signal alert to Telegram
     try:
