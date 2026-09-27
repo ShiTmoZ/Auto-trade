@@ -7,6 +7,7 @@ Monitors Top 10 Liquid Cryptos with Res-MLP Gatekeeper & Zero External Dependenc
 
 import time
 import sys
+import concurrent.futures
 from datetime import datetime, timezone
 from typing import Dict, Any, List
 from config import CONFIG
@@ -57,6 +58,26 @@ def run_bot(paper_mode: bool = True):
 
     tick_count = 0
     max_total_trades = CONFIG["risk"].get("max_total_open_trades", 3)
+    htf_cache: Dict[str, Any] = {}
+
+    def fetch_symbol_data(sym: str):
+        de = data_engines[sym]
+        candles_15m = de.fetch_klines("15m", limit=80)
+        now_ts = time.time()
+        cached = htf_cache.get(sym)
+        if not cached or (now_ts - cached["time"] > 180):
+            c1h = de.fetch_klines("1h", limit=50)
+            c4h = de.fetch_klines("4h", limit=30)
+            if c1h and c4h:
+                b, meta = trend_filter.get_market_bias(c1h, c4h)
+                htf_cache[sym] = {"bias": b, "htf_meta": meta, "time": now_ts}
+            elif cached:
+                b, meta = cached["bias"], cached["htf_meta"]
+            else:
+                b, meta = "NEUTRAL", {}
+        else:
+            b, meta = cached["bias"], cached["htf_meta"]
+        return sym, candles_15m, b, meta
 
     while True:
         try:
@@ -65,19 +86,18 @@ def run_bot(paper_mode: bool = True):
             open_trades = trade_logger.get_open_trades()
             open_symbols = {t["symbol"] for t in open_trades}
 
+            # Fast concurrent ingestion (all 20 pairs in ~3-4 seconds)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+                batch_data = list(pool.map(fetch_symbol_data, symbols))
+
             status_items = []
 
-            for sym in symbols:
-                de = data_engines[sym]
-                candles_15m = de.fetch_klines("15m", limit=80)
-                candles_1h = de.fetch_klines("1h", limit=50)
-                candles_4h = de.fetch_klines("4h", limit=30)
-
-                if not candles_15m or not candles_1h:
+            for sym, candles_15m, bias, htf_meta in batch_data:
+                if not candles_15m:
                     continue
 
+                de = data_engines[sym]
                 current_candle = candles_15m[-1]
-                bias, htf_meta = trend_filter.get_market_bias(candles_1h, candles_4h)
 
                 # Monitor open trades for this specific symbol
                 sym_open = [t for t in open_trades if t["symbol"] == sym]
