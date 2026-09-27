@@ -3,10 +3,14 @@ name: Automated Multi-Year Training & Backtest
 on:
   workflow_dispatch:
     inputs:
+      pipeline_mode:
+        description: 'Pipeline Mode (multi_asset / single_btc)'
+        required: true
+        default: 'multi_asset'
       start_year:
         description: 'Start Year for Historical Data'
         required: true
-        default: '2020'
+        default: '2021'
       end_year:
         description: 'End Year for Historical Data'
         required: true
@@ -33,18 +37,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch numpy pandas
 
-      - name: Run Multi-Year Mathematical Backtest (Binance Vision Ingestion)
+      - name: Run Historical Backtest & Ingestion Pipeline
         run: |
-          python multi_year_backtest.py ${{ github.event.inputs.start_year || '2020' }} ${{ github.event.inputs.end_year || '2026' }}
-
-      - name: Train Deep Residual MLP Gatekeeper
-        run: |
-          python pipeline_train.py
+          if [ "${{ github.event.inputs.pipeline_mode }}" = "single_btc" ]; then
+            python multi_year_backtest.py ${{ github.event.inputs.start_year || '2020' }} ${{ github.event.inputs.end_year || '2026' }}
+            python pipeline_train.py
+          else
+            python multi_asset_pipeline.py
+            python pipeline_train.py
+          fi
 
       - name: Commit and Push Training Artifacts & Report
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add BACKTEST_REPORT.md trades_backtest.json best_model.pt || true
-          git commit -m "chore(ml): update backtest report and best_model.pt [skip ci]" || echo "No changes to commit"
+          git config user.name "ShiTmoZ"
+          git config user.email "ShiTmoZ@users.noreply.github.com"
+          git add BACKTEST_REPORT.md trades_backtest.json multi_asset_trades.json best_model.pt README.md || true
+          git commit -m "chore(ml): update multi-asset backtest artifacts [skip ci]" || echo "No changes to commit"
           git push origin main
