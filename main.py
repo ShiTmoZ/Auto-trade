@@ -17,6 +17,7 @@ from ml_gatekeeper import MLGatekeeper
 from trade_logger import TradeLogger
 from execution_risk import ExecutionRiskManager
 from gemini_reviewer import GeminiReviewer
+from telegram_notifier import TelegramNotifier
 
 def run_bot(paper_mode: bool = True):
     symbols = CONFIG["symbols"] if CONFIG.get("multi_asset_mode") else [CONFIG["symbol"]]
@@ -52,6 +53,7 @@ def run_bot(paper_mode: bool = True):
         endpoint=CONFIG["ai_reviewer"]["endpoint"],
         model=CONFIG["ai_reviewer"]["model"]
     )
+    notifier = TelegramNotifier()
 
     tick_count = 0
     max_total_trades = CONFIG["risk"].get("max_total_open_trades", 3)
@@ -81,6 +83,9 @@ def run_bot(paper_mode: bool = True):
                 sym_open = [t for t in open_trades if t["symbol"] == sym]
                 for trade in sym_open:
                     update_res = risk_manager.check_trade_update(trade, current_candle)
+                    if update_res.get("be_triggered"):
+                        notifier.notify_breakeven(trade["trade_id"], sym, trade["entry_price"])
+
                     if update_res["is_closed"]:
                         trade_logger.update_trade_exit(
                             trade_id=trade["trade_id"],
@@ -88,6 +93,10 @@ def run_bot(paper_mode: bool = True):
                             status=update_res["status"],
                             pnl_usd=update_res["pnl_usd"],
                             pnl_r=update_res["pnl_r"]
+                        )
+                        notifier.notify_trade_closed(
+                            trade["trade_id"], sym, trade["side"], update_res["status"],
+                            update_res["exit_price"], update_res["pnl_usd"], update_res["pnl_r"]
                         )
                         print(f"\n🏁 TRADE CLOSED #{trade['trade_id']} on {sym} ({trade['side']}) | Result: {update_res['status']}")
                         print(f"   Exit: {update_res['exit_price']:,.2f} | PnL: {update_res['pnl_usd']:+,.2f} USD ({update_res['pnl_r']:+.2f}R)\n")
@@ -104,7 +113,7 @@ def run_bot(paper_mode: bool = True):
                             if signal:
                                 _process_potential_signal(
                                     sym, signal, tokyo_data, htf_meta, candles_15m,
-                                    ml_gatekeeper, risk_manager, trade_logger
+                                    ml_gatekeeper, risk_manager, trade_logger, notifier
                                 )
 
                         # Short setup: Tokyo Low breakout
@@ -115,7 +124,7 @@ def run_bot(paper_mode: bool = True):
                             if signal:
                                 _process_potential_signal(
                                     sym, signal, tokyo_data, htf_meta, candles_15m,
-                                    ml_gatekeeper, risk_manager, trade_logger
+                                    ml_gatekeeper, risk_manager, trade_logger, notifier
                                 )
 
                 # Status snippet for top symbols
@@ -142,9 +151,15 @@ def run_bot(paper_mode: bool = True):
 def _process_potential_signal(symbol: str, signal: Dict[str, Any], tokyo_data: Dict[str, Any],
                               htf_meta: Dict[str, Any], candles_15m: List[Dict[str, Any]],
                               ml_gatekeeper: MLGatekeeper, risk_manager: ExecutionRiskManager,
-                              trade_logger: TradeLogger):
+                              trade_logger: TradeLogger, notifier: TelegramNotifier):
     features = ml_gatekeeper.extract_features(signal, tokyo_data, htf_meta, candles_15m)
     approved, score, details = ml_gatekeeper.evaluate_signal(features)
+
+    # Immediately push signal alert to Telegram
+    try:
+        notifier.notify_trade_signal(symbol, signal, score, approved)
+    except Exception as e:
+        print(f"[Notifier Warning]: {e}")
 
     print("\n\n" + "=" * 70)
     print(f"🚨 VALID BREAKOUT DETECTED: {symbol} {signal['signal_type']} @ {signal['level_broken']:,.2f} USD")

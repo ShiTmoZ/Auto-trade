@@ -51,11 +51,13 @@ class ExecutionRiskManager:
         tp = trade["take_profit"]
         risk_dist = abs(entry - sl)
 
+        be_triggered = False
         if side == "LONG":
             # 1. Breakeven check
             be_price = entry + (risk_dist * self.breakeven_r)
             if high >= be_price and sl < entry:
                 trade["stop_loss"] = entry
+                be_triggered = True
                 print(f"[RiskManager] 🛡️ Trade #{trade['trade_id']} reached +{self.breakeven_r}R! SL moved to Breakeven ({entry:,.2f})")
 
             # 2. Check Stop Loss
@@ -64,20 +66,21 @@ class ExecutionRiskManager:
                 pnl_usd = (exit_price - entry) * trade["position_size_btc"]
                 pnl_r = (exit_price - entry) / risk_dist
                 status = "CLOSED_BREAKEVEN" if exit_price == entry else "CLOSED_LOSS"
-                return {"is_closed": True, "exit_price": exit_price, "status": status, "pnl_usd": pnl_usd, "pnl_r": pnl_r}
+                return {"is_closed": True, "exit_price": exit_price, "status": status, "pnl_usd": pnl_usd, "pnl_r": pnl_r, "be_triggered": be_triggered}
 
             # 3. Check Take Profit
             if high >= tp:
                 exit_price = tp
                 pnl_usd = (exit_price - entry) * trade["position_size_btc"]
                 pnl_r = (exit_price - entry) / risk_dist
-                return {"is_closed": True, "exit_price": exit_price, "status": "CLOSED_WIN", "pnl_usd": pnl_usd, "pnl_r": pnl_r}
+                return {"is_closed": True, "exit_price": exit_price, "status": "CLOSED_WIN", "pnl_usd": pnl_usd, "pnl_r": pnl_r, "be_triggered": be_triggered}
 
         elif side == "SHORT":
             # 1. Breakeven check
             be_price = entry - (risk_dist * self.breakeven_r)
             if low <= be_price and sl > entry:
                 trade["stop_loss"] = entry
+                be_triggered = True
                 print(f"[RiskManager] 🛡️ Trade #{trade['trade_id']} reached +{self.breakeven_r}R! SL moved to Breakeven ({entry:,.2f})")
 
             # 2. Check Stop Loss
@@ -86,13 +89,13 @@ class ExecutionRiskManager:
                 pnl_usd = (entry - exit_price) * trade["position_size_btc"]
                 pnl_r = (entry - exit_price) / risk_dist
                 status = "CLOSED_BREAKEVEN" if exit_price == entry else "CLOSED_LOSS"
-                return {"is_closed": True, "exit_price": exit_price, "status": status, "pnl_usd": pnl_usd, "pnl_r": pnl_r}
+                return {"is_closed": True, "exit_price": exit_price, "status": status, "pnl_usd": pnl_usd, "pnl_r": pnl_r, "be_triggered": be_triggered}
 
             # 3. Check Take Profit
             if low <= tp:
                 exit_price = tp
                 pnl_usd = (entry - exit_price) * trade["position_size_btc"]
                 pnl_r = (entry - exit_price) / risk_dist
-                return {"is_closed": True, "exit_price": exit_price, "status": "CLOSED_WIN", "pnl_usd": pnl_usd, "pnl_r": pnl_r}
+                return {"is_closed": True, "exit_price": exit_price, "status": "CLOSED_WIN", "pnl_usd": pnl_usd, "pnl_r": pnl_r, "be_triggered": be_triggered}
 
-        return {"is_closed": False}
+        return {"is_closed": False, "be_triggered": be_triggered}
