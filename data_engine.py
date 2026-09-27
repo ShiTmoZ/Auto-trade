@@ -1,30 +1,56 @@
 """
 Data Engine: Binance API integration, Candle Parsing, and Tokyo Session Range Extraction
+Includes automatic censorship-bypass mirrors and optional proxy support for restricted networks.
 """
 
+import os
 import json
 import urllib.request
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
+from config import CONFIG
 
 class DataEngine:
     def __init__(self, symbol: str = "BTCUSDT"):
         self.symbol = symbol
-        self.base_url = "https://api.binance.com/api/v3/klines"
+        net_cfg = CONFIG.get("network", {})
+        self.mirrors = net_cfg.get("mirrors", [
+            "https://data-api.binance.vision",
+            "https://api1.binance.com",
+            "https://api2.binance.com",
+            "https://api3.binance.com",
+            "https://api.binance.com"
+        ])
+        self.proxy = net_cfg.get("proxy", "") or os.environ.get("HTTPS_PROXY", "") or os.environ.get("HTTP_PROXY", "")
+        
+        # Configure urllib opener if proxy is specified
+        if self.proxy:
+            proxy_handler = urllib.request.ProxyHandler({"http": self.proxy, "https": self.proxy})
+            self.opener = urllib.request.build_opener(proxy_handler)
+        else:
+            self.opener = urllib.request.build_opener()
 
     def fetch_klines(self, interval: str = "15m", limit: int = 150) -> List[Dict[str, Any]]:
         """
-        Fetch OHLCV candles from Binance public API.
-        Pure Python standard library implementation for maximum portability.
+        Fetch OHLCV candles from Binance, cycling through mirrors on network blockades.
         """
-        url = f"{self.base_url}?symbol={self.symbol}&interval={interval}&limit={limit}"
-        req = urllib.request.Request(url, headers={"User-Agent": "AutoTradeBot/1.0"})
-        
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                raw_data = json.loads(resp.read().decode())
-        except Exception as e:
-            print(f"[DataEngine Error] Failed to fetch {interval} klines: {e}")
+        raw_data = None
+        last_error = None
+
+        for base_url in self.mirrors:
+            url = f"{base_url}/api/v3/klines?symbol={self.symbol}&interval={interval}&limit={limit}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            try:
+                with self.opener.open(req, timeout=8) as resp:
+                    if resp.status == 200:
+                        raw_data = json.loads(resp.read().decode())
+                        break
+            except Exception as e:
+                last_error = e
+                continue
+
+        if raw_data is None:
+            print(f"[DataEngine Error] Failed to fetch {interval} klines across all mirrors. Last error: {last_error}")
             return []
 
         candles = []
@@ -41,7 +67,7 @@ class DataEngine:
                 "is_closed": False
             })
             
-        # The last candle in Binance response is currently forming
+        # The last candle in response is currently forming
         for c in candles[:-1]:
             c["is_closed"] = True
             
@@ -51,12 +77,10 @@ class DataEngine:
     def _calculate_indicators(self, candles: List[Dict[str, Any]]):
         """Calculate Volume SMA 20 and ATR for volatility benchmarking."""
         for i in range(len(candles)):
-            # Volume SMA (20 period)
             start_vol = max(0, i - 19)
             subset_vol = [candles[j]["volume"] for j in range(start_vol, i + 1)]
             candles[i]["vol_sma20"] = sum(subset_vol) / len(subset_vol) if subset_vol else 1.0
             
-            # Simple True Range (TR)
             if i > 0:
                 prev_close = candles[i - 1]["close"]
                 tr = max(
@@ -71,51 +95,38 @@ class DataEngine:
         # ATR 14
         for i in range(len(candles)):
             start_atr = max(0, i - 13)
-            trs = [candles[j]["tr"] for j in range(start_atr, i + 1)]
-            candles[i]["atr14"] = sum(trs) / len(trs) if trs else 100.0
+            subset_tr = [candles[j]["tr"] for j in range(start_atr, i + 1)]
+            candles[i]["atr14"] = sum(subset_tr) / len(subset_tr) if subset_tr else 50.0
 
-    def extract_latest_tokyo_session(self, candles: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def extract_latest_tokyo_session(self, candles_15m: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
-        Extract the most recent completed Tokyo Session (00:00 to 09:00 UTC).
-        Tracks High, Low, and unmitigated state.
+        Identify Tokyo Session (00:00 - 09:00 UTC) range.
+        Extends High and Low forward until mitigated by post-session price action.
         """
-        tokyo_candles = []
-        for c in candles:
-            utc_hour = c["utc_dt"].hour
-            # Tokyo session: 00:00 to 09:00 UTC
-            if 0 <= utc_hour < 9:
-                tokyo_candles.append(c)
-
+        tokyo_candles = [c for c in candles_15m if 0 <= c["utc_dt"].hour < 9]
         if not tokyo_candles:
             return None
 
-        # Group by UTC date to find the latest session
         latest_date = tokyo_candles[-1]["utc_dt"].date()
-        current_session_candles = [c for c in tokyo_candles if c["utc_dt"].date() == latest_date]
-
-        if not current_session_candles:
+        current_tokyo = [c for c in tokyo_candles if c["utc_dt"].date() == latest_date]
+        
+        if len(current_tokyo) < 4:
             return None
 
-        session_high = max(c["high"] for c in current_session_candles)
-        session_low = min(c["low"] for c in current_session_candles)
-        session_open = current_session_candles[0]["open"]
-        session_close = current_session_candles[-1]["close"]
-
-        # Find post-session candles to determine mitigation status
-        last_tokyo_ts = current_session_candles[-1]["timestamp"]
-        post_candles = [c for c in candles if c["timestamp"] > last_tokyo_ts]
-
-        high_mitigated = any(c["high"] >= session_high for c in post_candles)
-        low_mitigated = any(c["low"] <= session_low for c in post_candles)
+        tokyo_high = max(c["high"] for c in current_tokyo)
+        tokyo_low = min(c["low"] for c in current_tokyo)
+        
+        # Check if mitigated by candles after 09:00 UTC
+        post_tokyo = [c for c in candles_15m if c["utc_dt"].date() == latest_date and c["utc_dt"].hour >= 9]
+        
+        high_mitigated = any(c["high"] >= tokyo_high for c in post_tokyo)
+        low_mitigated = any(c["low"] <= tokyo_low for c in post_tokyo)
 
         return {
-            "date": str(latest_date),
-            "high": session_high,
-            "low": session_low,
-            "open": session_open,
-            "close": session_close,
-            "range_usd": session_high - session_low,
+            "date": latest_date.isoformat(),
+            "high": tokyo_high,
+            "low": tokyo_low,
             "high_mitigated": high_mitigated,
             "low_mitigated": low_mitigated,
-            "candle_count": len(current_session_candles)
+            "candle_count": len(current_tokyo)
         }

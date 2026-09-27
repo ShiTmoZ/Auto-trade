@@ -4,7 +4,7 @@ Trade Logger & Database Manager: Persistent SQLite storage for trade telemetry, 
 
 import sqlite3
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 class TradeLogger:
@@ -50,7 +50,7 @@ class TradeLogger:
         ml_confidence: float,
         features: List[float]
     ) -> int:
-        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -73,7 +73,7 @@ class TradeLogger:
         pnl_usd: float,
         pnl_r: float
     ):
-        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("""

@@ -6,7 +6,7 @@ Orchestrates Tokyo Session Breakout Trading Bot with ML Gatekeeper & Gemini Meta
 
 import time
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from config import CONFIG
 from data_engine import DataEngine
 from trend_filter import TrendFilter
@@ -53,7 +53,7 @@ def run_bot(paper_mode: bool = True):
     while True:
         try:
             tick_count += 1
-            now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
             # 1. Fetch Market Data
             candles_15m = data_engine.fetch_klines("15m", limit=120)

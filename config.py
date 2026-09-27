@@ -52,5 +52,17 @@ CONFIG: Dict[str, Any] = {
     },
     
     # Database & Storage
-    "database_path": "trade_history.db"
+    "database_path": "trade_history.db",
+
+    # Network & Censorship Bypass (for environments with restricted Binance access)
+    "network": {
+        "proxy": "",  # e.g., "http://127.0.0.1:10809" or "socks5://127.0.0.1:10808"
+        "mirrors": [
+            "https://data-api.binance.vision",
+            "https://api1.binance.com",
+            "https://api2.binance.com",
+            "https://api3.binance.com",
+            "https://api.binance.com"
+        ]
+    }
 }
