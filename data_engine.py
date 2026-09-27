@@ -100,10 +100,11 @@ class DataEngine:
 
     def extract_latest_tokyo_session(self, candles_15m: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
-        Identify Tokyo Session (00:00 - 09:00 UTC) range.
-        Extends High and Low forward until mitigated by post-session price action.
+        Identify Asian / Tokyo Session (00:00 - 07:00 UTC / 03:30 - 10:30 Tehran) range.
+        Extends High and Low forward until mitigated by London/NY price action.
         """
-        tokyo_candles = [c for c in candles_15m if 0 <= c["utc_dt"].hour < 9]
+        end_hour = CONFIG.get("tokyo_session", {}).get("end_utc_hour", 7)
+        tokyo_candles = [c for c in candles_15m if 0 <= c["utc_dt"].hour < end_hour]
         if not tokyo_candles:
             return None
 
@@ -116,8 +117,8 @@ class DataEngine:
         tokyo_high = max(c["high"] for c in current_tokyo)
         tokyo_low = min(c["low"] for c in current_tokyo)
         
-        # Check if mitigated by candles after 09:00 UTC
-        post_tokyo = [c for c in candles_15m if c["utc_dt"].date() == latest_date and c["utc_dt"].hour >= 9]
+        # Check if mitigated by candles after end_hour (London/NY)
+        post_tokyo = [c for c in candles_15m if c["utc_dt"].date() == latest_date and c["utc_dt"].hour >= end_hour]
         
         high_mitigated = any(c["high"] >= tokyo_high for c in post_tokyo)
         low_mitigated = any(c["low"] <= tokyo_low for c in post_tokyo)

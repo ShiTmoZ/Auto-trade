@@ -10,10 +10,10 @@ CONFIG: Dict[str, Any] = {
     "execution_timeframe": "15m",
     "htf_timeframes": ["1h", "4h"],
     
-    # Tokyo Session (Asian Range) in UTC
+    # Tokyo / Asian Session in UTC (ICT Asian Range: 03:30 to 10:30 Tehran)
     "tokyo_session": {
         "start_utc_hour": 0,   # 00:00 UTC (03:30 Tehran)
-        "end_utc_hour": 9,     # 09:00 UTC (12:30 Tehran)
+        "end_utc_hour": 7,     # 07:00 UTC (10:30 Tehran - London Open Killzone begins)
     },
     
     # Risk Management
