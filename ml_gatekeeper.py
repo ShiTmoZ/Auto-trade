@@ -11,22 +11,23 @@ import json
 from typing import Dict, Any, List, Tuple, Optional
 
 class MLGatekeeper:
+    # NOTE: order below MUST mirror extract_15_features() in multi_asset_pipeline.py
     FEATURE_NAMES = [
-        "vol_ratio",                  # 0: Volume ratio vs 20-SMA
-        "fvg_size_pct",              # 1: FVG dollar size / Price
-        "has_fvg",                   # 2: Binary FVG flag (0 or 1)
-        "candle0_body_ratio",        # 3: Body / Total Candle Range
-        "risk_atr_ratio",            # 4: Stop distance / ATR14
-        "tokyo_range_pct",           # 5: Tokyo Range / Price
-        "hour_utc",                  # 6: Normalized UTC hour (0 to 1)
-        "day_of_week",               # 7: Normalized day of week (0 to 1)
-        "htf_alignment_strength",    # 8: 1.0 if 1H and 4H agree, else 0.5
-        "retest_depth_pct",          # 9: Entry distance from broken level
-        "volatility_ratio",          # 10: ATR14 / Baseline ATR
-        "dist_from_tokyo_open_pct",  # 11: Distance from session open
-        "momentum_3c_pct",           # 12: 3-candle rate of change
-        "consecutive_run",           # 13: Number of consecutive trend candles
-        "range_expansion_ratio"      # 14: Break candle range vs 10-candle avg range
+        "vol_ratio",                 # 0: min(5.0, volume ratio vs 20-SMA)
+        "has_fvg",                   # 1: Binary FVG flag (0 or 1)
+        "candle0_body_ratio",        # 2: Body / Total Candle Range (c0)
+        "tokyo_range_pct",           # 3: Tokyo Range / Price
+        "atr_close_ratio",           # 4: ATR14 / Close
+        "hour_utc",                  # 5: Normalized UTC hour (0 to 1)
+        "day_of_week",               # 6: Normalized day of week (0 to 1)
+        "htf_trend_side",            # 7: 1.0 if close above 4H EMA50, else 0.0
+        "htf_trend_distance",        # 8: |close - EMA50_4H| / close
+        "rsi14_norm",                # 9: (RSI14 - 50) / 50
+        "candle1_body_ratio",        # 10: Body / Total Candle Range (c1)
+        "vol_ratio_scaled",          # 11: vol_ratio / 3.0
+        "range_expansion_ratio",     # 12: Break candle range vs ATR14
+        "candle0_bullish",           # 13: 1.0 if c0 close > open, else 0.0
+        "constant_bias",             # 14: Hardcoded 0.5 constant (training parity)
     ]
 
     def __init__(
@@ -69,8 +70,10 @@ class MLGatekeeper:
                     data = json.load(f)
                     self.weights = data.get("weights", [])
                     self.bias = data.get("bias", 0.0)
-                    self.norm_mean = data.get("norm_mean")
-                    self.norm_std = data.get("norm_std")
+                    # QUANT FIX: never clobber Res-MLP calibration stats with missing keys
+                    if data.get("norm_mean") and data.get("norm_std"):
+                        self.norm_mean = data.get("norm_mean")
+                        self.norm_std = data.get("norm_std")
                     self.confidence_threshold = data.get("confidence_threshold", self.confidence_threshold)
                     self.total_trained_samples = data.get("samples", 0)
                     if len(self.weights) == len(self.FEATURE_NAMES):
@@ -102,14 +105,20 @@ class MLGatekeeper:
 
     def _save_weights(self):
         try:
+            payload = {
+                "weights": self.weights,
+                "bias": self.bias,
+                "samples": self.total_trained_samples,
+                "learning_rate": self.learning_rate,
+                "l2_lambda": self.l2_lambda
+            }
+            # QUANT FIX: persist calibration stats so a restart never loses normalization
+            if self.norm_mean and self.norm_std:
+                payload["norm_mean"] = self.norm_mean
+                payload["norm_std"] = self.norm_std
+                payload["confidence_threshold"] = self.confidence_threshold
             with open(self.weights_file, "w") as f:
-                json.dump({
-                    "weights": self.weights,
-                    "bias": self.bias,
-                    "samples": self.total_trained_samples,
-                    "learning_rate": self.learning_rate,
-                    "l2_lambda": self.l2_lambda
-                }, f, indent=2)
+                json.dump(payload, f, indent=2)
         except Exception as e:
             print(f"[MLGatekeeper] Could not save weights: {e}")
 
@@ -249,6 +258,11 @@ class MLGatekeeper:
         Maintains conservative learning rate (eta=0.015) to avoid overfitting.
         """
         if len(features) != len(self.weights):
+            return
+
+        # QUANT FIX: the frozen Res-MLP is authoritative; online SGD on the unused
+        # linear proxy would corrupt the persisted linear fallback. Skip when active.
+        if self.res_mlp_layers:
             return
 
         y = 1.0 if actual_win else 0.0

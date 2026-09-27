@@ -80,6 +80,8 @@ def train_neural_network():
 
     epochs = 60
     best_val_loss = float("inf")
+    best_state = None
+    best_val_acc = 0.0
     print(f"Training Res-MLP for {epochs} epochs (Batch=32, LR=0.001, Focal Loss)...")
 
     for epoch in range(1, epochs + 1):
@@ -102,6 +104,8 @@ def train_neural_network():
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
+            best_state = {k: v.detach().clone() for k, v in model.state_dict().items()}
+            best_val_acc = val_acc
             torch.save(model.state_dict(), "best_model.pt")
 
         if epoch % 10 == 0 or epoch == epochs:
@@ -112,10 +116,13 @@ def train_neural_network():
 
     # Export full PyTorch state_dict into zero-dependency res_mlp_weights.json
     try:
-        state = model.state_dict()
+        # QUANT FIX: export the BEST validation checkpoint, not the last epoch
+        state = best_state if best_state is not None else model.state_dict()
         model_export = {
             "model_type": "Deep-Residual-MLP",
             "features_count": 15,
+            "best_val_loss": round(float(best_val_loss), 6),
+            "val_accuracy": round(float(best_val_acc), 4),
             "norm_mean": [round(float(m.item()), 6) for m in mean.squeeze()],
             "norm_std": [round(float(s.item()), 6) for s in std.squeeze()],
             "layers": {k: v.cpu().tolist() for k, v in state.items()}
