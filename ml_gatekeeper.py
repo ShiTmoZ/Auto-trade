@@ -58,6 +58,7 @@ class MLGatekeeper:
                     self.bias = data.get("bias", 0.0)
                     self.norm_mean = data.get("norm_mean")
                     self.norm_std = data.get("norm_std")
+                    self.confidence_threshold = data.get("confidence_threshold", self.confidence_threshold)
                     self.total_trained_samples = data.get("samples", 0)
                     if len(self.weights) == len(self.FEATURE_NAMES):
                         return

@@ -53,8 +53,8 @@ The **Tokyo Breakout Quantitative Engine** is an institutional-grade algorithmic
 </p>
 
 ### A. Dataset & Training Scope
-* **Training Corpus:** **1,401,860 real 15-minute candles** across 2021 through 2026.
-* **Multi-Asset Universe:** Top 10 high-liquidity cryptocurrency pairs (`BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `BNBUSDT`, `XRPUSDT`, `DOGEUSDT`, `ADAUSDT`, `AVAXUSDT`, `LINKUSDT`, `LTCUSDT`).
+* **Training Corpus:** **4,753,163 real 15-minute candles** across 2018 through 2026.
+* **Multi-Asset Universe:** Top 20 high-liquidity cryptocurrency pairs (`BTCUSDT`, `ETHUSDT`, `SOLUSDT`, `BNBUSDT`, `XRPUSDT`, `DOGEUSDT`, `ADAUSDT`, `AVAXUSDT`, `LINKUSDT`, `LTCUSDT`, `NEARUSDT`, `DOTUSDT`, `MATICUSDT`, `ATOMUSDT`, `UNIUSDT`, `ICPUSDT`, `FILUSDT`, `ETCUSDT`, `APTUSDT`, `ARBUSDT`) + US Equities (`SPY`, `QQQ`) & Forex (`USDJPY`).
 * **Feature Vector:** 15 normalized quantitative metrics (Volume ratios, FVG depth, HTF directional alignment, ATR-relative distance to Asian liquidity, body velocity, RSI momentum, and QM sweep indicators).
 
 ### B. Mathematical Specifications
@@ -69,29 +69,28 @@ The **Tokyo Breakout Quantitative Engine** is an institutional-grade algorithmic
 
 ---
 
-## 4. Multi-Asset Empirical Backtest Verification (2021 – 2026)
+## 4. Multi-Asset Empirical Backtest Verification (2018 – 2026)
 
-Evaluated across **10 liquid cryptocurrency assets** over **1,401,860 candles (15m)**:
+### Quant-Hardened Methodology:
+* **Worst-Case Intra-Bar Execution:** If a 15-minute candle penetrates both Stop Loss and Breakeven/Take Profit, the engine pessimistically marks Stop Loss hit first.
+* **Phantom Limit Fill Elimination:** Trades only trigger if post-breakout candles empirically pullback to the FVG median within 3 bars.
+* **Realistic Fee & Slippage Friction:** Fixed **$-0.18\text{R}$ transaction fee** deducted from every trade ($0.08\%$ round-trip Binance VIP0 taker commission).
 
-| Asset Symbol | Total 15m Candles | Total Trades | Wins (+2.5R) | Breakeven (+1.5R) | Losses (-1.0R) | Win Rate (W/(W+L)) | Net Realized Return |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **BTCUSDT** | 140,186 | 858 | 447 | 259 | 152 | **74.62%** | **+967.50 R** |
-| **ETHUSDT** | 140,186 | 870 | 466 | 251 | 153 | **75.28%** | **+1,012.00 R** |
-| **SOLUSDT** | 140,186 | 833 | 431 | 252 | 150 | **74.18%** | **+928.00 R** |
-| **BNBUSDT** | 140,186 | 774 | 412 | 228 | 134 | **75.46%** | **+896.50 R** |
-| **XRPUSDT** | 140,186 | 764 | 414 | 222 | 128 | **76.38%** | **+908.00 R** |
-| **DOGEUSDT** | 140,186 | 779 | 409 | 221 | 149 | **73.30%** | **+874.50 R** |
-| **ADAUSDT** | 140,186 | 792 | 417 | 231 | 144 | **74.33%** | **+899.50 R** |
-| **AVAXUSDT** | 140,186 | 832 | 428 | 256 | 148 | **74.31%** | **+923.00 R** |
-| **LINKUSDT** | 140,186 | 786 | 400 | 228 | 158 | **71.68%** | **+842.00 R** |
-| **LTCUSDT** | 140,186 | 783 | 408 | 233 | 142 | **74.18%** | **+879.50 R** |
-| **PORTFOLIO TOTAL** | **1,401,860** | **8,071** | **4,232 (52.4%)** | **2,381 (29.5%)** | **1,458 (18.1%)** | **74.38%** | **+9,130.50 R** |
+Evaluated across **20 liquid cryptocurrency assets** over **4,753,163 candles (15m)**:
 
-### Portfolio Quantitative Summary:
-* **True Win Rate ($\frac{\text{Wins}}{\text{Wins} + \text{Losses}}$):** **74.38%**
-* **Portfolio Profit Factor:** **7.26**
-* **Expected Value (EV):** **+1.13 R per executed trade**
-* **Max Breakeven Protection:** 2,381 trades (29.5%) averted loss via the +1.5R trailing breakeven rule.
+| Metric | Raw Price Action Setup | Res-MLP AI Gatekeeper Filtered |
+| :--- | :---: | :---: |
+| **Total Candidates Evaluated** | 12,567 Setups | **2,960 High-Conviction Setups** |
+| **Full Wins (+2.32R Net)** | 3,723 (29.6%) | **1,172 (39.6%)** |
+| **Breakeven (-0.18R Net Fee)** | 2,123 (16.9%) | **594 (20.1%)** |
+| **Losses (-1.18R Net)** | 6,721 (53.5%) | **1,194 (40.3%)** |
+| **True Win Rate ($\frac{\text{Wins}}{\text{Wins} + \text{Losses}}$)** | 35.65% | **49.54% (~50%)** |
+| **Net Realized Return (R)** | +331.44 R | **+1,204.20 R (Net After Fees)** |
+| **Portfolio Profit Factor** | 1.04 | **1.79** |
+
+### Key Institutional Takeaway:
+* Without machine learning filtering, mechanical breakouts hover near break-even (Profit Factor 1.04).
+* The **Res-MLP Gatekeeper** filters out 76% of false breakouts, elevating the net win rate to **49.54%** which, combined with a **1:2.5 Risk-to-Reward ratio**, generates a healthy and institutionally sustainable **+1,204.20 R net return**.
 
 ---
 

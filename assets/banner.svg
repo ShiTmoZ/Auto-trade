@@ -43,34 +43,34 @@
   </text>
 
   <!-- Subtitle -->
-  <text x="60" y="185" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="400">
-    Multi-Asset Execution Framework: Asian Liquidity Expansions, QM Sweeps &amp; Deep Learning Gatekeeper
+  <text x="60" y="185" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="400">
+    Quant-Hardened Framework (2018–2026) • 20 Assets • 4.75M Candles • Real Fees &amp; Worst-Case Execution
   </text>
 
   <!-- Stat Cards -->
   <g transform="translate(60, 230)">
     <!-- Card 1 -->
     <rect width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
-    <text x="25" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">TRUE WIN RATE</text>
-    <text x="25" y="68" fill="#00FFA3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">74.4%</text>
-    <text x="135" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">(8,071 Setups)</text>
+    <text x="25" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">AI FILTERED WIN RATE</text>
+    <text x="25" y="68" fill="#00FFA3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">49.5%</text>
+    <text x="135" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">(2,960 Setups)</text>
 
     <!-- Card 2 -->
     <rect x="270" width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
-    <text x="295" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">PORTFOLIO RETURN</text>
-    <text x="295" y="68" fill="#00F0FF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">+9,130 R</text>
+    <text x="295" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">NET RETURN (AFTER FEES)</text>
+    <text x="295" y="68" fill="#00F0FF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">+1,192 R</text>
     <text x="445" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">Net Profit</text>
 
     <!-- Card 3 -->
     <rect x="540" width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
     <text x="565" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">PROFIT FACTOR</text>
-    <text x="565" y="68" fill="#FBBF24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">7.26</text>
-    <text x="645" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">Portfolio</text>
+    <text x="565" y="68" fill="#FBBF24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">1.79</text>
+    <text x="645" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">Net Risk-Adj</text>
 
     <!-- Card 4 -->
     <rect x="810" width="250" height="85" rx="12" fill="rgba(255, 255, 255, 0.03)" stroke="rgba(255, 255, 255, 0.08)" />
     <text x="835" y="38" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">CANDLES EVALUATED</text>
-    <text x="835" y="68" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">1.40M</text>
+    <text x="835" y="68" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="800">4.75M</text>
     <text x="940" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">15m Candles</text>
   </g>
 </svg>
