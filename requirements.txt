@@ -1,0 +1,4 @@
+# Optional dependencies for extending Auto-Trade Bot
+# (The core engine is 100% self-contained using Python Standard Library)
+requests>=2.28.0
+ccxt>=4.0.0
