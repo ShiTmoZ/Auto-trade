@@ -46,10 +46,23 @@ class MLGatekeeper:
         self.total_trained_samples: int = 0
         self.norm_mean: Optional[List[float]] = None
         self.norm_std: Optional[List[float]] = None
+        self.res_mlp_layers: Optional[Dict[str, Any]] = None
         self._load_or_initialize_weights()
 
     def _load_or_initialize_weights(self):
         """Loads weights from disk or initializes with robust quantitative defaults."""
+        res_mlp_path = os.path.join(os.path.dirname(self.weights_file), "res_mlp_weights.json")
+        if os.path.exists(res_mlp_path):
+            try:
+                with open(res_mlp_path, "r") as f:
+                    mlp_data = json.load(f)
+                    self.res_mlp_layers = mlp_data.get("layers")
+                    self.norm_mean = mlp_data.get("norm_mean")
+                    self.norm_std = mlp_data.get("norm_std")
+                    print("[MLGatekeeper] 🧠 Loaded Genuine PyTorch Deep Residual MLP layers from res_mlp_weights.json!")
+            except Exception as e:
+                print(f"[MLGatekeeper] Warning: Could not read {res_mlp_path}: {e}")
+
         if os.path.exists(self.weights_file):
             try:
                 with open(self.weights_file, "r") as f:
@@ -155,9 +168,44 @@ class MLGatekeeper:
             0.5
         ]
 
+    def _evaluate_res_mlp(self, x_norm: List[float]) -> float:
+        layers = self.res_mlp_layers
+        def linear(x, w, b):
+            return [sum(x[j] * w[i][j] for j in range(len(x))) + b[i] for i in range(len(w))]
+
+        def layer_norm(x, weight, bias, eps=1e-5):
+            n = len(x)
+            mean = sum(x) / n
+            var = sum((xi - mean) ** 2 for xi in x) / n
+            std = math.sqrt(var + eps)
+            return [((x[i] - mean) / std) * weight[i] + bias[i] for i in range(n)]
+
+        def leaky_relu(x, negative_slope=0.1):
+            return [xi if xi > 0 else xi * negative_slope for xi in x]
+
+        # Block 1
+        h1 = linear(x_norm, layers["fc1.weight"], layers["fc1.bias"])
+        ln1 = layer_norm(h1, layers["ln1.weight"], layers["ln1.bias"])
+        out1 = leaky_relu(ln1)
+
+        # Block 2
+        h2 = linear(out1, layers["fc2.weight"], layers["fc2.bias"])
+        ln2 = layer_norm(h2, layers["ln2.weight"], layers["ln2.bias"])
+        out2 = leaky_relu(ln2)
+
+        # Skip Projection & Fusion
+        proj = linear(out1, layers["skip_proj.weight"], layers["skip_proj.bias"])
+        fc3 = linear(out2, layers["fc3.weight"], layers["fc3.bias"])
+        res = leaky_relu([fc3[i] + proj[i] for i in range(len(fc3))])
+
+        # Probability Head
+        logit = linear(res, layers["head.weight"], layers["head.bias"])[0]
+        prob = 1.0 / (1.0 + math.exp(-max(-20.0, min(20.0, logit))))
+        return prob
+
     def evaluate_signal(self, features: List[float]) -> Tuple[bool, float, Dict[str, Any]]:
         """
-        Calculates win probability using the regularized logistic model.
+        Calculates win probability using the Deep Residual MLP or regularized linear model.
         Returns: (is_approved, confidence_score, explanation_dict)
         """
         if len(features) != len(self.weights):
@@ -169,12 +217,14 @@ class MLGatekeeper:
         else:
             norm_feats = features
 
-        # Dot product
-        z = self.bias + sum(w * x for w, x in zip(self.weights, norm_feats))
-        # Sigmoid activation with clamp to avoid overflow
-        z_clamped = max(min(z, 20.0), -20.0)
-        prob = 1.0 / (1.0 + math.exp(-z_clamped))
-        
+        if self.res_mlp_layers:
+            prob = self._evaluate_res_mlp(norm_feats)
+        else:
+            # Fallback to calibrated linear proxy
+            z = self.bias + sum(w * x for w, x in zip(self.weights, norm_feats))
+            z_clamped = max(min(z, 20.0), -20.0)
+            prob = 1.0 / (1.0 + math.exp(-z_clamped))
+
         is_approved = prob >= self.confidence_threshold
         
         details = {

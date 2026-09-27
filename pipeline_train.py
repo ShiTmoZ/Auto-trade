@@ -110,6 +110,22 @@ def train_neural_network():
 
     print("✅ PyTorch model trained successfully and saved to 'best_model.pt'.")
 
+    # Export full PyTorch state_dict into zero-dependency res_mlp_weights.json
+    try:
+        state = model.state_dict()
+        model_export = {
+            "model_type": "Deep-Residual-MLP",
+            "features_count": 15,
+            "norm_mean": [round(float(m.item()), 6) for m in mean.squeeze()],
+            "norm_std": [round(float(s.item()), 6) for s in std.squeeze()],
+            "layers": {k: v.cpu().tolist() for k, v in state.items()}
+        }
+        with open("res_mlp_weights.json", "w") as f:
+            json.dump(model_export, f)
+        print("✅ Full Deep Res-MLP layers exported to 'res_mlp_weights.json'.")
+    except Exception as e:
+        print(f"Warning: Could not export res_mlp_weights.json: {e}")
+
     # Export calibrated logistic proxy weights for zero-dependency runtime
     try:
         # Fit calibrated linear weights using ridge approximation on normalized inputs
