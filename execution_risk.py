@@ -49,7 +49,7 @@ class ExecutionRiskManager:
         entry = trade["entry_price"]
         sl = trade["stop_loss"]
         tp = trade["take_profit"]
-        risk_dist = abs(entry - sl)
+        risk_dist = max(abs(entry - sl), 1e-6)
 
         be_triggered = False
         if side == "LONG":

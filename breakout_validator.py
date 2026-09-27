@@ -4,6 +4,14 @@ Breakout Validator: Implements the 3-Candle Confirmation Protocol, FVG Detection
 
 from typing import List, Dict, Any, Optional
 
+def _smart_round(val: float) -> float:
+    if abs(val) < 1.0:
+        return round(val, 5)
+    elif abs(val) < 20.0:
+        return round(val, 3)
+    else:
+        return round(val, 2)
+
 class BreakoutValidator:
     def __init__(self, min_volume_ratio: float = 1.3, min_rr_ratio: float = 2.5):
         self.min_volume_ratio = min_volume_ratio
@@ -92,16 +100,16 @@ class BreakoutValidator:
                 "level_broken": level,
                 "level_type": level_type,
                 "breakout_time": c0["utc_dt"].strftime("%Y-%m-%d %H:%M UTC"),
-                "entry_price": round(entry_price, 2),
-                "stop_loss": round(stop_loss, 2),
-                "take_profit": round(take_profit, 2),
-                "risk_distance": round(risk_dist, 2),
+                "entry_price": _smart_round(entry_price),
+                "stop_loss": _smart_round(stop_loss),
+                "take_profit": _smart_round(take_profit),
+                "risk_distance": _smart_round(risk_dist),
                 "rr_ratio": self.min_rr_ratio,
                 "vol_ratio": round(vol_ratio, 2),
                 "has_fvg": has_fvg,
-                "fvg_size": round(fvg_size, 2),
-                "candle0_body": round(abs(c0["close"] - c0["open"]), 2),
-                "atr14": round(c0.get("atr14", 50.0), 2)
+                "fvg_size": _smart_round(fvg_size),
+                "candle0_body": _smart_round(abs(c0["close"] - c0["open"])),
+                "atr14": _smart_round(c0.get("atr14", 50.0))
             }
 
         # ==============================================================
@@ -146,16 +154,16 @@ class BreakoutValidator:
                 "level_broken": level,
                 "level_type": level_type,
                 "breakout_time": c0["utc_dt"].strftime("%Y-%m-%d %H:%M UTC"),
-                "entry_price": round(entry_price, 2),
-                "stop_loss": round(stop_loss, 2),
-                "take_profit": round(take_profit, 2),
-                "risk_distance": round(risk_dist, 2),
+                "entry_price": _smart_round(entry_price),
+                "stop_loss": _smart_round(stop_loss),
+                "take_profit": _smart_round(take_profit),
+                "risk_distance": _smart_round(risk_dist),
                 "rr_ratio": self.min_rr_ratio,
                 "vol_ratio": round(vol_ratio, 2),
                 "has_fvg": has_fvg,
-                "fvg_size": round(fvg_size, 2),
-                "candle0_body": round(abs(c0["close"] - c0["open"]), 2),
-                "atr14": round(c0.get("atr14", 50.0), 2)
+                "fvg_size": _smart_round(fvg_size),
+                "candle0_body": _smart_round(abs(c0["close"] - c0["open"])),
+                "atr14": _smart_round(c0.get("atr14", 50.0))
             }
 
         return None

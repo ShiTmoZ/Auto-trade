@@ -59,6 +59,7 @@ def run_bot(paper_mode: bool = True):
     tick_count = 0
     max_total_trades = CONFIG["risk"].get("max_total_open_trades", 3)
     htf_cache: Dict[str, Any] = {}
+    executed_levels = set()  # (symbol, tokyo_date, level_type)
 
     def fetch_symbol_data(sym: str):
         de = data_engines[sym]
@@ -126,22 +127,26 @@ def run_bot(paper_mode: bool = True):
                     tokyo_data = de.extract_latest_tokyo_session(candles_15m)
                     if tokyo_data:
                         # Long setup: Tokyo High breakout
-                        if not tokyo_data["high_mitigated"] and bias == "BULLISH":
+                        high_key = (sym, tokyo_data["date"], "TOKYO_HIGH")
+                        if high_key not in executed_levels and bias == "BULLISH":
                             signal = validator.evaluate_breakout(
                                 candles_15m, tokyo_data["high"], "TOKYO_HIGH", bias
                             )
                             if signal:
+                                executed_levels.add(high_key)
                                 _process_potential_signal(
                                     sym, signal, tokyo_data, htf_meta, candles_15m,
                                     ml_gatekeeper, risk_manager, trade_logger, notifier
                                 )
 
                         # Short setup: Tokyo Low breakout
-                        if not tokyo_data["low_mitigated"] and bias == "BEARISH":
+                        low_key = (sym, tokyo_data["date"], "TOKYO_LOW")
+                        if low_key not in executed_levels and bias == "BEARISH":
                             signal = validator.evaluate_breakout(
                                 candles_15m, tokyo_data["low"], "TOKYO_LOW", bias
                             )
                             if signal:
+                                executed_levels.add(low_key)
                                 _process_potential_signal(
                                     sym, signal, tokyo_data, htf_meta, candles_15m,
                                     ml_gatekeeper, risk_manager, trade_logger, notifier
