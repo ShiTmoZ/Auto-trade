@@ -133,7 +133,7 @@ def run_bot(paper_mode: bool = True):
 
             # Heartbeat display
             sample_status = " | ".join(status_items[:5])
-            print(f"[{now_str}] Portfolio ({len(symbols)} Assets) | Open: {len(open_trades)}/{max_total_trades} | {sample_status}", end="\r")
+            print(f"[{now_str}] Portfolio ({len(symbols)} Assets) | Open: {len(open_trades)}/{max_total_trades} | {sample_status}", flush=True)
 
             # Review losing trades if enabled
             if tick_count % 30 == 0 and CONFIG["ai_reviewer"]["enabled"]:
